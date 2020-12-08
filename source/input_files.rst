@@ -39,8 +39,8 @@ follows, where ``FOO`` and ``BAR`` are both section names, with a number of (key
 
 The valid sections for setting up a nekRS simulation are
 
-* ``BOOMERAMG``: 
-* ``GENERAL``: generic settings
+* ``BOOMERAMG``: settings for the (optional) :term:`AMG` solver
+* ``GENERAL``: generic settings for the simulation
 * ``OCCA``: backend device settings
 * ``PRESSURE``: settings for the pressure solution
 * ``SCALARXX``: settings for the ``XX``-th scalar
@@ -48,9 +48,47 @@ The valid sections for setting up a nekRS simulation are
 * ``VELOCITY``: settings for the velocity solution
 
 Each of the keys and value types are now described for these sections. Default settings
-are shown in parentheses.
+are shown in parentheses. Note that nekRS currently does not have any checking on valid
+input parameters in the ``.par`` file (though this will be added in the future) - please
+be sure that you type these (key, value) pairs correctly. nekRS also does not have a
+method to register all valid keys, so this user guide may quickly become out of date
+unless developers are careful to keep the keys listed here up to date.
 
-In the ``GENERAL`` section, valid (key, value) pairs are as follows.
+nekRS uses just-in-time compilation to allow the incorporation of user-defined functions
+into program execution. These functions can be written to allow ultimate flexibility on
+the part of the user to affect the simulation, such as to define custom fluid properties,
+specify spatially-dependent boundary and initial conditions, and apply post-processing
+operations. Some of the parameters in the sections can be overridden through the use of
+user-defined functions - see, for example, the ``viscosity`` parameter than is a key in
+the ``VELOCITY`` section. This parameter is used to set a constant viscosity, whereas
+for variable-property simulations, a user-defined function will override the ``viscosity``
+input parameter. A full description of these user-defined functions on the host and
+device are described in Sections :ref:`User-Defined Host Functions (.udf)` and
+:ref:`User-Defined Device Functions (.oudf)`. So, the description of valid (key, value)
+pairs here does not necessarily imply that these parameters reflect the full capabilities
+of nekRS.
+
+``BOOMERAMG`` section
+^^^^^^^^^^^^^^^^^^^^^
+
+**coarsenType**
+
+**interpolationType**
+
+**iterations** *<int>*
+
+**nonGalerkinTol**
+
+**smootherType**
+
+**strongThreshold** *<real>*
+
+``GENERAL`` section
+^^^^^^^^^^^^^^^^^^^
+
+**cubaturePolynomialOrder**
+
+**dealiasing** *<bool>*
 
 **dt** *<real>*
   Time step size
@@ -58,9 +96,11 @@ In the ``GENERAL`` section, valid (key, value) pairs are as follows.
 **endTime** *<real>*
   Final time at which to end the simulation, if using ``stopAt = endTime``
 
-**extrapolation**
+**extrapolation** *oifs, subcycling*
 
-**filtering** *(none), explicit, hpfrt*
+**filterCutoffRatio** *<real>*
+
+**filtering** *(none), explicit, hpfrtm*
 
 **filterModes** *<int>*
 
@@ -83,11 +123,22 @@ In the ``GENERAL`` section, valid (key, value) pairs are as follows.
   When to stop the simulation, either based on a number of time steps *numSteps* or a simulated
   end time *endTime*
 
-**stressFormulation** *<bool>*
+**subcyclingOrder** *<int>*
 
 **subCyclingSteps** *<int>*
 
-**timeStepper** *tombo2, tombo3*
+**targetCFL** *<real>*
+  The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``
+
+**timeStepper** *bdf1, bdf2, bdf3, tombo1, tombo2, tombo3*
+  If you select any of the :term:`BDF` options, the time integrator is internally set to
+  the :term:`TOMBO` time integrator of equivalent order.
+
+**variableDT** *<bool>*
+  Whether to enable a variable time step size; at the moment, nekRS only allows a fixed
+  time step size, so this parameter is unused.
+
+**verbose**
 
 **writeControl** *(timeStep), runTime*
   Method to use for the writing of output files, either based on a time step interval with
@@ -97,6 +148,120 @@ In the ``GENERAL`` section, valid (key, value) pairs are as follows.
   Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
   in units of simulation time for ``writeControl = runTime``.
 
+``OCCA`` section
+^^^^^^^^^^^^^^^^
+
+**backend** *CUDA*
+
+**deviceNumber** *LOCAL-RANK*
+
+``PRESSURE`` section
+^^^^^^^^^^^^^^^^^^^^
+
+**amgSolver** *paralmond*
+
+**downwardSmoother** *ASM, jacobi, RAS*
+
+**galerkinCoarseOperator** *<bool>*
+
+**pMultigridCoarsening**
+
+**preconditioner** *jacobi, multigrid*
+
+**residualProjection** *<bool>*
+
+**residualProjectionStart** *<int>*
+
+**residualProjectionVectors** *<int>*
+
+**residualTol** *<real>*
+
+**smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras*
+
+**upwardSmoother** *ASM, JACOBI, RAS*
+
+``SCALARXX`` section
+^^^^^^^^^^^^^^^^^^^^
+
+This section is used to define the transport parameters and solver settings for each
+passive scalar. For instance, in a simulation with two passive scalars, you would have
+two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive scalar.
+
+**boundaryTypeMap** *<char[]>*
+
+**diffusivity** *<real>*
+  Although this is named ``diffusivity``, this parameter really represents the conductivity
+  governing diffusion of the passive scalar. In other words, the analogue from the
+  ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
+  ``conductivity`` parameter. If a negative value is provided, the
+  conductivity is internally set to :math:`1/|k|`, where :math:`k` is the value of the
+  ``conductivity`` key.
+
+**residualProjection** *<bool>*
+
+**residualProjectionStart** *<int>*
+
+**residualProjectionVectors** *<int>*
+
+**residualTol** *<real>*
+
+**rho** *<real>*
+  Although this is name ``rho``, this parameter really represents the coefficient on the
+  total derivative of the passive scalar. In other words, the analogue from the
+  ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
+  ``rhoCp`` parameter.
+
+``TEMPERATURE`` section
+^^^^^^^^^^^^^^^^^^^^^^^
+
+**boundaryTypeMap** *<string[]>*
+  Array of strings describing the boundary condition to be applied to each sideset, ordered
+  by sideset ID.
+
+**conductivity** *<real>*
+  Constant thermal conductivity; if a negative value is provided, the thermal conductivity
+  is internally set to :math:`1/|k|`, where :math:`k` is the value of the ``conductivity``
+  key.
+
+**residualProjection** *<bool>*
+
+**residualProjectionStart** *<int>*
+
+**residualProjectionVectors** *<int>*
+
+**residualTol** *<real>*
+
+**rhoCp** *<real>*
+  Constant volumetric isobaric specific heat.
+
+**solver** *none*
+  You can turn off the solution of temperature by setting the solver to ``none``
+
+``VELOCITY`` section
+^^^^^^^^^^^^^^^^^^^^
+
+**boundaryTypeMap** *<char[]>*
+  Array of strings describing the boundary condition to be applied to each sideset, ordered
+  by sideset ID.
+
+**density** *<real>*
+  Constant fluid density
+
+**residualProjection** *<bool>*
+
+**residualProjectionStart** *<int>*
+
+**residualProjectionVectors** *<int>*
+
+**residualTol** *<real>*
+
+**solver** *none*
+  You can turn off the solution of the flow (velocity and pressure) by setting the solver
+  to ``none``.
+
+**viscosity** *<real>*
+  Constant dynamic viscosity; if a negative value is provided, the dynamic viscosity is
+  internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
 
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^

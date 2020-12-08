@@ -5,14 +5,23 @@ Glossary
     AMD
       Advanced Micro Devices
 
+    AMG
+      Algebraic Multi Grid
+
     ANL
       Argonne National Laboratory
 
     API
       Application Programming Interface
 
+    BDF
+      Backward Differentiation Formula
+
     CFD
       Computational Fluid Dynamics
+
+    CFL
+      Courant-Friedrichs-Lewy
 
     CUDA
       Compute Unified Device Architecture, or Nvidia's :term:`API` for programming with :term:`GPUs<GPU>`
