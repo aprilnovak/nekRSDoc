@@ -1,0 +1,49 @@
+Glossary
+========
+
+.. glossary::
+    AMD
+      Advanced Micro Devices
+
+    ANL
+      Argonne National Laboratory
+
+    API
+      Application Programming Interface
+
+    CFD
+      Computational Fluid Dynamics
+
+    CUDA
+      Compute Unified Device Architecture, or Nvidia's :term:`API` for programming with :term:`GPUs<GPU>`
+
+    CPU
+      Central Processing Unit
+
+    FPGA
+      Field-Programmable Gate Array
+
+    GPU
+      Graphics Processing Unit
+
+    HIP
+      :term:`AMD`'s :term:`API` for programming with :term:`GPUs<GPU>`
+
+    HPC
+      High Performance Computing
+
+    Nek5000
+      A high performance :term:`CFD` spectral element code; see it on `github <https://github.com/Nek5000/Nek5000>`__.
+
+    OCCA
+      Open Concurrent Compute Abstraction, an API for interacting with various :term:`GPU` backends; see it on `github <https://github.com/libocca/occa>`__.
+
+    OpenCL
+      A standard maintained by the Khronos Group for programming with :term:`CPUs<CPU>`, :term:`GPUs<GPU>`, :term:`FPGAs<FPGA>`, and other hardware accelerators.
+
+    PSU
+      Pennsylvania State University
+
+    UIUC
+      The University of Illinois at Urbana-Champaign
+
