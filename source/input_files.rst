@@ -63,8 +63,8 @@ user-defined functions - see, for example, the ``viscosity`` parameter than is a
 the ``VELOCITY`` section. This parameter is used to set a constant viscosity, whereas
 for variable-property simulations, a user-defined function will override the ``viscosity``
 input parameter. A full description of these user-defined functions on the host and
-device are described in Sections :ref:`User-Defined Host Functions (.udf)` and
-:ref:`User-Defined Device Functions (.oudf)`. So, the description of valid (key, value)
+device are described in Sections :ref:`UDF Functions <udf_functions>` and
+:ref:`OUDF Functions <oudf_functions>`. So, the description of valid (key, value)
 pairs here does not necessarily imply that these parameters reflect the full capabilities
 of nekRS.
 
@@ -269,11 +269,108 @@ Legacy Option (.rea)
 Mesh File (.re2)
 ________________
 
+The nekRS mesh file, with extension ``.re2``, can be produced by either
+
+1. Converting a mesh made with commercial meshing software to ``.re2`` format
+2. Directly creating an ``.re2``-format mesh with nekRS-specific scripts
+
+Each of these two approaches are described in more detail in the following sections.
+But first, a few more details on the restrictions on the nekRS mesh.
+
+nekRS is currently, and for the forseeable future, restricted to 3-D hexahedral meshes.
+2-D and 1-D problems can be accommodated on these 3-D meshes by applying zero gradient
+boundary conditions to all solution variables in directions perpendicular to the
+simulation plane or line, respectively. All source terms and material properties in the
+governing equations must therefore also be fixed in the off-interest directions.
+
+nekRS also assumes that the numeric IDs for the mesh boundaries are ordered contiguously
+beginning from 1. Furthermore, the ``.re2`` format only supports HEX8 (an eight-node
+hexahedral element) and HEX20 (a twenty-node hexahedral element) elements.
+
+Converting an Existing Commercial Mesh
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The most general and flexible approach for creating a mesh is to use commercial meshing software
+such as Cubit or Gmsh. After creating the mesh, it must be converted to the ``.re2`` binary format. Depending
+on the mesh format (such as Exodus II format or Gmsh format), a conversion script is used to
+convert the mesh to ``.re2`` format.
+
+:term:`Nek5000` is currently a dependency in the nekRS build system for some I/O tasks. Relevant
+to the present meshing discussion, a number of scripts shipped with :term:`Nek5000` are used to
+perform this mesh conversion process. These scripts are built as part of the nekRS build process
+and are available at ``nekRS/build/_deps/nek5000_content-src/tools``, so no extra steps are
+required on the user's end to access these scripts. You may want to add this directory to your
+path to avoid typing out the full directory path for each usage.
+
+Example: Converting an Exodus mesh
+""""""""""""""""""""""""""""""""""
+
+For instance, to convert from an Exodus format mesh
+(for this case, named ``my_mesh.exo``) to the ``.re2`` format, use the ``exo2nek`` script:
+
+.. code-block::
+
+  user$ exo2nek
+
+  Input (.exo) file name:
+  my_mesh
+
+While the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek`` script
+is currently limited to HEX20 elements. Therefore, all Exodus format meshes must be
+generated with HEX20 elements. 
+
+Example:: Converting a Gmsh mesh
+""""""""""""""""""""""""""""""""
+
+To instead convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
+``.re2`` format, use the ``gmsh2nek`` script:
+
+.. code-block::
+
+  user$ gmsh2nek
+
+  Enter mesh dimension: 3
+  Input (.msh) file name: my_mesh
+
+Legacy Option (.rea)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The very early equivalent of the ``.par`` parameter file for :term:`Nek5000` was a file with extension
+``.rea``. This file contained similar user settings for problem parameters that now are
+set in the ``.par`` file, in addition to ASCII text format describing each node of the
+mesh. See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
+`documentation <http://nek5000.github.io/NekDoc/problem_setup/case_files.html>`__ [#f1]_
+for further details on the format for the ``.rea`` file.
+
+The mesh section of the ``.rea`` file can be generated in two different manners -
+either by specifying all the element nodes by hand, or through a number of scripts that
+ship with the :term:`Nek5000` dependency. These scripts, such as ``genbox``, take user
+input related to the desired grid spacing and generate the mesh portion of the ``.rea`` file.
+
+The ``.rea`` file is ASCII text format. For very large meshes, it is more efficient to
+store the mesh information in binary ``.re2`` format. The mesh portion of the legacy ``.rea``
+file can be converted to the ``.re2`` format with the ``reatore2`` script, which also
+ships with the :term:`Nek5000` dependency.
+
+To summarize, the legacy mesh format is based on a file with ``.rea`` extension that contains
+*both* simulation parameters such as the time step size, as well as an ASCII text section describing
+the mesh. The mesh portion can either be specified manually, or generated with a number of
+scripts that ship with the :term:`Nek5000` dependency. For both the manual- and script-generated
+cases, the ``.rea`` file can be converted to binary format for more efficient storage.
+
+.. _udf_functions:
+
 User-Defined Host Functions (.udf)
 __________________________________
 
 Legacy Option (.usr)
 ^^^^^^^^^^^^^^^^^^^^
 
+.. _oudf_functions:
+
 User-Defined Device Functions (.oudf)
 _____________________________________
+
+.. rubric:: Footnoes
+
+.. [#f1] While the heading for ``Mesh File (.re2)`` seems to suggest that the contents refer only to the ``.re2`` format, the actual text description still points to the legacy ``.rea`` format.
