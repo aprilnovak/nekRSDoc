@@ -18,6 +18,15 @@ legacy settings require proficiency in Fortran, the formation of several additio
 files, and in some cases, careful usage of structured text inputs, all new
 users are encouraged to adopt the nekRS-based problem setup.
 
+Note that each of the input files is described only in terms of its file extension (such as
+``.par`` and ``.udf``). A full simulation "case" consists of all of these files with
+a common prefix. For instance, in the ``nekRS/examples/eddyPeriodic`` directory, you will see
+files named ``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``eddy.oudf``, where ``eddy`` is
+referred to as the case "name." The only restrictions on the case name are
+
+1. It must be used as the prefix on all simulation files
+2. Typical restrictions for naming files for your operating system
+
 Parameter File (.par)
 _____________________
 
@@ -368,6 +377,34 @@ ships with the :term:`Nek5000` dependency.
 
 User-Defined Host Functions (.udf)
 __________________________________
+
+User-defined functions for the host are specified in the ``.udf`` file. These (optional)
+functions can be used to perform virtually any action that can be programmed in C++.
+Some of the more common examples are setting initial conditions, querying the solution
+at regular intervals, and defining custom material properties and source terms. The
+available functions that you may define in the ``.udf`` file are as follows.
+
+``void UDF_Setup0(MPI_Comm comm, setupAide & options)``
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+This user-defined function is passed the nekRS :term:`MPI` communicator and a data
+structure containing all of the user-specified simulation options. This function is
+called once at the beginning of the simulation *before* initializing the nekRS internals
+such as the mesh, solvers, and solution data arrays. Because virtually no aspects of
+the nekRS simulation have been initialized at the point when this function is called,
+this function is primarily used to modify the user settings. For the typical user,
+all relevant settings are already exposed through the ``.par`` file; any desired
+changes to settings should therefore be performed by modifying the ``.par`` file.
+
+This function is intended for developers or advanced users to overwrite any user
+settings that may not be exposed to the ``.par`` file. For instance, setting
+``timeStepper = tombo2`` in the ``GENERAL`` section triggers a number of other internal
+settings in nekRS that do not need to be exposed to the typical user, but that perhaps
+a developer may want to modify for testing purposes.
+
+``void UDF_Setup(nrs_t * nrs)``
+"""""""""""""""""""""""""""""""
+
 
 Legacy Option (.usr)
 ^^^^^^^^^^^^^^^^^^^^
