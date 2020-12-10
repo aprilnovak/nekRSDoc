@@ -332,6 +332,17 @@ To instead convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``
   Enter mesh dimension: 3
   Input (.msh) file name: my_mesh
 
+.. _nek5000_mesh:
+
+Nek5000 Script-Based Meshing
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A number of meshing scripts ship with the :term:`Nek5000` dependency, which allow
+you to directly create ``.re2`` format meshes without the need of commercial meshing
+tools. These scripts, such as ``genbox``, take user input related to the desired
+grid spacing to generate meshes for fairly simple geometries. Please consult the
+:term:`Nek5000` documentation for more information on the use of these scripts.
+
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -343,20 +354,15 @@ mesh. See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
 for further details on the format for the ``.rea`` file.
 
 The mesh section of the ``.rea`` file can be generated in two different manners -
-either by specifying all the element nodes by hand, or through a number of scripts that
-ship with the :term:`Nek5000` dependency. These scripts, such as ``genbox``, take user
-input related to the desired grid spacing and generate the mesh portion of the ``.rea`` file.
-
-The ``.rea`` file is ASCII text format. For very large meshes, it is more efficient to
-store the mesh information in binary ``.re2`` format. The mesh portion of the legacy ``.rea``
+either by specifying all the element nodes by hand, or with the :term:`Nek5000` mesh
+generation scripts described in Section :ref:`Nek5000 Script-Based Meshing <nek5000_mesh>`.
+The ``.rea`` file approach is considered to be a legacy option, despite the fact
+that the same :term:`Nek5000`-based scripts may be used to set up the mesh in either ASCII
+(``.rea``) or binary (``.re2``) format,
+because the binary format is preferred for very large meshes where memory may be a concern.
+The mesh portion of the legacy ``.rea``
 file can be converted to the ``.re2`` format with the ``reatore2`` script, which also
 ships with the :term:`Nek5000` dependency.
-
-To summarize, the legacy mesh format is based on a file with ``.rea`` extension that contains
-*both* simulation parameters such as the time step size, as well as an ASCII text section describing
-the mesh. The mesh portion can either be specified manually, or generated with a number of
-scripts that ship with the :term:`Nek5000` dependency. For both the manual- and script-generated
-cases, the ``.rea`` file can be converted to binary format for more efficient storage.
 
 .. _udf_functions:
 
