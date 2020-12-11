@@ -32,6 +32,9 @@ Glossary
     FPGA
       Field-Programmable Gate Array
 
+    GLL
+      Gauss-Lobatto-Legendre
+
     GPU
       Graphics Processing Unit
 
@@ -40,6 +43,9 @@ Glossary
 
     HPC
       High Performance Computing
+
+    MPI
+      Message Passing Interface
 
     Nek5000
       A high performance :term:`CFD` spectral element code; see it on `github <https://github.com/Nek5000/Nek5000>`__.

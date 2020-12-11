@@ -328,7 +328,7 @@ While the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek``
 is currently limited to HEX20 elements. Therefore, all Exodus format meshes must be
 generated with HEX20 elements. 
 
-Example:: Converting a Gmsh mesh
+Example: Converting a Gmsh mesh
 """"""""""""""""""""""""""""""""
 
 To instead convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
@@ -382,13 +382,24 @@ User-defined functions for the host are specified in the ``.udf`` file. These (o
 functions can be used to perform virtually any action that can be programmed in C++.
 Some of the more common examples are setting initial conditions, querying the solution
 at regular intervals, and defining custom material properties and source terms. The
-available functions that you may define in the ``.udf`` file are as follows.
+available functions that you may define in the ``.udf`` file are as follows. For each
+function, some example use cases are provided for context. As this section is meant
+as a quick reference to the usage of these functions, please consult the
+:ref:`tutorials <tutorials>` for more in-depth examples on the user-defined function usage.
+You will see that usage of these functions requires some proficiency in the C++
+language as well as some knowledge of the nekRS source code internals.
 
-``void UDF_Setup0(MPI_Comm comm, setupAide & options)``
-"""""""""""""""""""""""""""""""""""""""""""""""""""""""
+``UDF_ExecuteStep(nrs_t * nrs, dfloat time, int tstep)``
+""""""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-This user-defined function is passed the nekRS :term:`MPI` communicator and a data
-structure containing all of the user-specified simulation options. This function is
+``UDF_LoadKernels(nrs_t *  nrs)``
+"""""""""""""""""""""""""""""""""
+
+``UDF_Setup0(MPI_Comm comm, setupAide & options)``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This user-defined function is passed the nekRS :term:`MPI` communicator ``comm`` and a data
+structure containing all of the user-specified simulation options, ``options``. This function is
 called once at the beginning of the simulation *before* initializing the nekRS internals
 such as the mesh, solvers, and solution data arrays. Because virtually no aspects of
 the nekRS simulation have been initialized at the point when this function is called,
@@ -402,8 +413,67 @@ settings that may not be exposed to the ``.par`` file. For instance, setting
 settings in nekRS that do not need to be exposed to the typical user, but that perhaps
 a developer may want to modify for testing purposes.
 
-``void UDF_Setup(nrs_t * nrs)``
-"""""""""""""""""""""""""""""""
+``UDF_Setup(nrs_t * nrs)``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+This user-defined function is passed the nekRS simulation object ``nrs``. This function
+is called once at the beginning of the simulation *after* initializing the mesh, solution
+arrays, material property arrays, and boundary field mappings. This function is most
+commonly used to:
+
+1. Apply initial conditions to the solution
+2. Assign function pointers to user-defined source terms and material properties
+
+Any other additional setup actions that depend on initialization of the solution arrays
+and mesh can of course also be placed in this function. A few examples are now provided
+for each of these use cases.
+
+Setting Initial Conditions
+""""""""""""""""""""""""""
+
+As an example for using the ``UDF_Setup`` function to set initial conditions, consider
+the following code snippet, which sets initial conditions for all three components of
+velocity, the pressure, and two passive scalars. Because these initial conditions will
+be a function of space, we must first obtain the mesh information, for which we
+use the ``nrs->mesh`` pointer. All solution fields are stored in nekRS in terms of the
+quadrature points (also referred to as the :term:`GLL` points). So, we will apply
+the initial conditions by looping over all of these quadrature points, which for
+the current :term:`MPI` process is equal to ``mesh->Np``, or the number of quadrature
+points per element, and ``mesh->Nelements``, the number of elements on this process.
+
+Next, we can get the :math:`x`, :math:`y`, and :math:`z` coordinates for the current
+quadrature point with the ``x``, ``y``, and ``z`` arrays on the ``mesh`` object.
+Finally, we programmatically set initial conditions for the solution fields. ``nrs->U``
+is a single array that holds all three components of velocity; the ``nrs->fieldOffset``
+variable is used to shift between components in this array. ``nrs->P`` represents the
+pressure. Finally, ``nrs->S`` is a single array that holds all of the passive scalars.
+Similar to the offset performed to index into the velocity array, the
+``nrs->cds->fieldOffset`` variable is used to shift between components in the ``nrs->S``
+array. Note that if temperature is present in your problem, it will *always* be the
+first passive scalar.
+
+.. code-block:: cpp
+
+   void UDF_Setup(nrs_t *nrs)
+   {
+    mesh_t * mesh = nrs->mesh;
+    int num_quadrature_points = mesh->Np * mesh->Nelements;
+
+    for (int n = 0; n < num_quadrature_points; n++) {
+      float x = mesh->x[n];
+      float y = mesh->y[n];
+      float z = mesh->z[n];
+
+      nrs->U[n + 0 * nrs->fieldOffset] = sin(x) * cos(y) * cos(z);
+      nrs->U[n + 1 * nrs->fieldOffset] = -cos(x) * sin(y) * cos(z);
+      nrs->U[n + 2 * nrs->fieldOffset] = 0;
+
+      nrs->P[n] = 101325.0;
+
+      nrs->S[n + 0 * nrs->cds->fieldOffset] = 573.0;
+      nrs->S[n + 1 * nrs->cds->fieldOffset] = 100.0 + z;
+    }
+   }
 
 
 Legacy Option (.usr)

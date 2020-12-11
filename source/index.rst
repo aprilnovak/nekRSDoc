@@ -22,6 +22,7 @@ Table of Contents
    :maxdepth: 2
 
    input_files
+   tutorials
    glossary
 
 .. Indices and tables
