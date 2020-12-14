@@ -113,9 +113,13 @@ array.
     }
    }
 
+.. _boundary_conditions:
+
+Setting Boundary Conditions with Device Kernels
+-----------------------------------------------
+
 .. _custom_properties:
 
 Setting Custom Properties with ``UDF_Setup``
 --------------------------------------------
-
 

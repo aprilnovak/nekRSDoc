@@ -369,10 +369,10 @@ of these functions requires some proficiency in the C++
 language as well as some knowledge of the nekRS source code internals.
 
 ``UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep)``
-""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``UDF_LoadKernels(nrs_t*  nrs)``
-"""""""""""""""""""""""""""""""""
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``UDF_Setup0(MPI_Comm comm, setupAide & options)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -469,7 +469,41 @@ Legacy Option (.usr)
 User-Defined Device Functions (.oudf)
 _____________________________________
 
-This file contains all user-defined functions that are to run on the device.
+This file contains all user-defined functions that are to run on the device. These functions include
+all functions used to apply boundary conditions that are built in to nekRS, as well as any other
+problem-specific device functions.
+
+Specifying Boundary Conditions
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The type of condition to apply for each boundary is specified by the ``boundaryTypeMap`` parameter
+in the ``.par`` file. However, this single line only specifies the *type* of boundary condition.
+If that boundary condition requires additional information, such as a value to impose for
+a Dirichlet velocity condition, or a flux to impose for a Neumann temperature condition, then
+a device function must be provided in the ``.oudf`` file. The names of these functions, and the
+types of boundary conditions for which they are called, are described as follows.
+
+=========================================== ============= =======================================
+Function                                    Character Map Purpose
+=========================================== ============= =======================================
+``pressureDirichletConditions(bcData* bc)``               Dirichlet condition for pressure
+``scalarDirichletConditions(bcData* bc)``   ``t``         Dirichlet condition for passive scalars
+``scalarNeumannConditions(bcData* bc)``     ``f``         Neumann condition for passive scalars
+``velocityDirichletConditions(bcData* bc)`` ``v``         Dirichlet condition for velocity
+``velocityNeumannConditions(bcData* bc)``                 Neumann condition for velocity
+=========================================== ============= =======================================
+
+Each function has the same signature, and takes as input the ``bc`` object. This object contains
+all information needed to apply a boundary condition - the position, unit normals, and solution
+components. The "character map" refers to the character in the ``boundaryTypeMap`` key in the
+``.par`` file that will trigger this boundary condition. The ``scalar``-type boundary conditions
+are called for boundary conditions on passive scalars, while the ``pressure``- and ``velocity``-type
+conditions are called for the boundary conditions on the flow.
+
+Each of these functions is *only* called on boundaries that contain that boundary. For instance,
+if only boundaries 3 and 4 are primitive conditions on velocity, then ``velocityDirichletConditions``
+is only called on boundaries 3 and 4. See the :ref:`Setting Boundary Conditions <boundary_conditions>`
+section for several examples on how to set boundary conditions with device functions.
 
 .. rubric:: Footnotes
 
