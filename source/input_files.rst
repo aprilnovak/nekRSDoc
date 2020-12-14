@@ -1,5 +1,7 @@
-Input File Syntax
-=================
+.. _input:
+
+The nekRS Input Files
+=====================
 
 This page describes the input file structure and syntax needed to run a nekRS simulation.
 At a minimum, nekRS requires four files to run a problem - 
@@ -22,10 +24,14 @@ Note that each of the input files is described only in terms of its file extensi
 ``.par`` and ``.udf``). A full simulation "case" consists of all of these files with
 a common prefix. For instance, in the ``nekRS/examples/eddyPeriodic`` directory, you will see
 files named ``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``eddy.oudf``, where ``eddy`` is
-referred to as the case "name." The only restrictions on the case name are
+referred to as the case "name." The only restrictions on the case name are:
 
 1. It must be used as the prefix on all simulation files
 2. Typical restrictions for naming files for your operating system
+
+The scope of this page is merely to introduce the format and purpose of the four
+files needed to set up a nekRS simulation. Much more detailed instructions are provided
+on the :ref:`Detailed Usage <detailed>` page.
 
 Parameter File (.par)
 _____________________
@@ -278,23 +284,27 @@ Legacy Option (.rea)
 Mesh File (.re2)
 ________________
 
-The nekRS mesh file, with extension ``.re2``, can be produced by either
+The nekRS mesh file is provided in ``.re2`` format. This format can be
+produced by either:
 
 1. Converting a mesh made with commercial meshing software to ``.re2`` format
 2. Directly creating an ``.re2``-format mesh with nekRS-specific scripts
 
-Each of these two approaches are described in more detail in the following sections.
-But first, a few more details on the restrictions on the nekRS mesh.
+There are three main limitations for the nekRS mesh:
 
-nekRS is currently, and for the forseeable future, restricted to 3-D hexahedral meshes.
+1. nekRS is currently, and for the forseeable future, restricted to 3-D hexahedral meshes.
 2-D and 1-D problems can be accommodated on these 3-D meshes by applying zero gradient
 boundary conditions to all solution variables in directions perpendicular to the
 simulation plane or line, respectively. All source terms and material properties in the
 governing equations must therefore also be fixed in the off-interest directions.
 
-nekRS also assumes that the numeric IDs for the mesh boundaries are ordered contiguously
-beginning from 1. Furthermore, the ``.re2`` format only supports HEX8 (an eight-node
+2. nekRS assumes that the numeric IDs for the mesh boundaries are ordered contiguously
+beginning from 1.
+
+3. The ``.re2`` format only supports HEX8 (an eight-node
 hexahedral element) and HEX20 (a twenty-node hexahedral element) elements.
+
+The following two sections describe how to generate a mesh in ``.re2`` format.
 
 Converting an Existing Commercial Mesh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -311,37 +321,8 @@ and are available at ``nekRS/build/_deps/nek5000_content-src/tools``, so no extr
 required on the user's end to access these scripts. You may want to add this directory to your
 path to avoid typing out the full directory path for each usage.
 
-Example: Converting an Exodus mesh
-""""""""""""""""""""""""""""""""""
-
-For instance, to convert from an Exodus format mesh
-(for this case, named ``my_mesh.exo``) to the ``.re2`` format, use the ``exo2nek`` script:
-
-.. code-block::
-
-  user$ exo2nek
-
-  Input (.exo) file name:
-  my_mesh
-
-While the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek`` script
-is currently limited to HEX20 elements. Therefore, all Exodus format meshes must be
-generated with HEX20 elements. 
-
-Example: Converting a Gmsh mesh
-""""""""""""""""""""""""""""""""
-
-To instead convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
-``.re2`` format, use the ``gmsh2nek`` script:
-
-.. code-block::
-
-  user$ gmsh2nek
-
-  Enter mesh dimension: 3
-  Input (.msh) file name: my_mesh
-
-.. _nek5000_mesh:
+See the :ref:`Detailed Usage <detailed>` page for examples demonstrating conversion of Exodus
+and Gmsh meshes into ``.re2`` format.
 
 Nek5000 Script-Based Meshing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -364,11 +345,9 @@ for further details on the format for the ``.rea`` file.
 
 The mesh section of the ``.rea`` file can be generated in two different manners -
 either by specifying all the element nodes by hand, or with the :term:`Nek5000` mesh
-generation scripts described in Section :ref:`Nek5000 Script-Based Meshing <nek5000_mesh>`.
-The ``.rea`` file approach is considered to be a legacy option, despite the fact
-that the same :term:`Nek5000`-based scripts may be used to set up the mesh in either ASCII
-(``.rea``) or binary (``.re2``) format,
-because the binary format is preferred for very large meshes where memory may be a concern.
+generation scripts introduced in Section :ref:`Nek5000 Script-Based Meshing <nek5000_mesh>`.
+Because the binary ``.re2`` format is preferred for very large meshes where memory may be
+a concern, the ``.rea`` file approach is considered to be a legacy option.
 The mesh portion of the legacy ``.rea``
 file can be converted to the ``.re2`` format with the ``reatore2`` script, which also
 ships with the :term:`Nek5000` dependency.
@@ -389,10 +368,10 @@ as a quick reference to the usage of these functions, please consult the
 You will see that usage of these functions requires some proficiency in the C++
 language as well as some knowledge of the nekRS source code internals.
 
-``UDF_ExecuteStep(nrs_t * nrs, dfloat time, int tstep)``
+``UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep)``
 """"""""""""""""""""""""""""""""""""""""""""""""""""""""
 
-``UDF_LoadKernels(nrs_t *  nrs)``
+``UDF_LoadKernels(nrs_t*  nrs)``
 """""""""""""""""""""""""""""""""
 
 ``UDF_Setup0(MPI_Comm comm, setupAide & options)``
@@ -413,7 +392,7 @@ settings that may not be exposed to the ``.par`` file. For instance, setting
 settings in nekRS that do not need to be exposed to the typical user, but that perhaps
 a developer may want to modify for testing purposes.
 
-``UDF_Setup(nrs_t * nrs)``
+``UDF_Setup(nrs_t* nrs)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This user-defined function is passed the nekRS simulation object ``nrs``. This function
@@ -456,7 +435,7 @@ first passive scalar.
 
    void UDF_Setup(nrs_t *nrs)
    {
-    mesh_t * mesh = nrs->mesh;
+    mesh_t* mesh = nrs->mesh;
     int num_quadrature_points = mesh->Np * mesh->Nelements;
 
     for (int n = 0; n < num_quadrature_points; n++) {
@@ -475,6 +454,65 @@ first passive scalar.
     }
    }
 
+Specifying Custom Source Terms and Properties
+"""""""""""""""""""""""""""""""""""""""""""""
+
+In addition to the ``UDF_Setup0``, ``UDF_Setup``, ``UDF_ExecuteStep``, and ``UDF_LoadKernels``
+functions described in detail here, there are other user-defined functions. These functions
+are handled in a slightly different manner - rather than be tied to a specific function name
+like ``UDF_Setup0``, these functions are provided in terms of generic function pointers to
+*any* function (provided the function parameters match those of the pointer). The four
+function pointers are named as follows in nekRS:
+
+================== ======================================================== ===================
+Function pointer   Function signature                                       Purpose
+================== ======================================================== ===================
+``udf.uEqnSource`` ``f(nrs_t* nrs, float t, m o_U, m o_FU)``                momentum source
+``udf.sEqnSource`` ``f(nrs_t* nrs, float t, m o_S, m o_SU)``                scalar source
+``udf.properties`` ``f(nrs_t* nrs, float t, m o_U, m o_S, m o_Up, m o_Sp)`` material properties
+``udf.div``        ``f(nrs_t* nrs, float t, m o_div)``                      thermal divergence
+================== ======================================================== ===================
+
+To shorten the syntax above, the type ``m`` is shorthand for ``occa::memory``, and ``f`` is the
+name of the function, which can be *any* user-defined name. Other parameters that appear in the
+function signatures are as follows:
+
+* ``nrs`` is a pointer to the nekRS simulation object
+* ``t`` is the current simulation time
+* ``o_U`` is the velocity solution on the device
+* ``o_S`` is the scalar solution on the device
+* ``o_FU``
+* ``o_SU``
+* ``o_Up``
+* ``o_Sp``
+* ``o_div``
+
+The ``udf.uEqnSource`` allows specification of a momentum source, such as a gravitational force, or
+a friction form loss. The ``udf.sEqnSource`` allows specification of a source term for the passive
+scalars. For a temperature passive scalar, this source term might represent a volumetric heat source,
+while for a chemical concentration passive scalar, this source term could represent a mass
+source. The ``udf.properties`` allows specification of custom material properties for the flow,
+which can be a function of the flow state as well as position and time. Finally, ``udf.div``
+allows specification of the thermal divergence term needed for the low Mach formulation.
+
+As an example, the following code snippet shows how to set custom source terms and material
+properties for both the flow and passive scalar equations.
+
+.. code-block:: cpp
+
+   void UDF_Setup(nrs_t *nrs)
+   {
+     udf.sEqnSource = &my_heat_src_func;
+     udf.uEqnSource = &my_gravity_func;
+   }
+
+   void my_heat_src_func(nrs_t* nrs, dfloat time, occa::memory o_S, occa::memory o_FS)
+   {
+     mesh_t* mesh = nrs->mesh;
+     int num_quadrature_points = mesh->Np * mesh->Nelements;
+
+     for (int i = 0; i < num_quadrature_points; ++i)
+   }
 
 Legacy Option (.usr)
 ^^^^^^^^^^^^^^^^^^^^

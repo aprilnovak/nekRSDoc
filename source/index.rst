@@ -23,6 +23,7 @@ Table of Contents
 
    input_files
    tutorials
+   detailed_usage
    glossary
 
 .. Indices and tables
