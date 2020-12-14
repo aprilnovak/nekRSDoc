@@ -50,6 +50,8 @@ To convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
   Enter mesh dimension: 3
   Input (.msh) file name: my_mesh
 
+.. _setting_ICs:
+
 Setting Initial Conditions with ``UDF_Setup``
 ---------------------------------------------
 
@@ -110,4 +112,10 @@ array.
       nrs->S[n + 1 * nrs->cds->fieldOffset] = 100.0 + z;
     }
    }
+
+.. _custom_properties:
+
+Setting Custom Properties with ``UDF_Setup``
+--------------------------------------------
+
 

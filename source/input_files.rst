@@ -321,7 +321,7 @@ and are available at ``nekRS/build/_deps/nek5000_content-src/tools``, so no extr
 required on the user's end to access these scripts. You may want to add this directory to your
 path to avoid typing out the full directory path for each usage.
 
-See the :ref:`Detailed Usage <detailed>` page for examples demonstrating conversion of Exodus
+See the :ref:`Converting a Mesh to .re2 Format <converting_mesh>` section for examples demonstrating conversion of Exodus
 and Gmsh meshes into ``.re2`` format.
 
 .. _nek5000_mesh:
@@ -359,15 +359,13 @@ ships with the :term:`Nek5000` dependency.
 User-Defined Host Functions (.udf)
 __________________________________
 
-User-defined functions for the host are specified in the ``.udf`` file. These (optional)
+User-defined functions for the host are specified in the ``.udf`` file. These
 functions can be used to perform virtually any action that can be programmed in C++.
 Some of the more common examples are setting initial conditions, querying the solution
 at regular intervals, and defining custom material properties and source terms. The
-available functions that you may define in the ``.udf`` file are as follows. For each
-function, some example use cases are provided for context. As this section is meant
-as a quick reference to the usage of these functions, please consult the
-:ref:`tutorials <tutorials>` for more in-depth examples on the user-defined function usage.
-You will see that usage of these functions requires some proficiency in the C++
+available functions that you may define in the ``.udf`` file are as follows. From the
+examples shown on the :ref:`Detailed Usage <detailed>` page, you will see that usage
+of these functions requires some proficiency in the C++
 language as well as some knowledge of the nekRS source code internals.
 
 ``UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep)``
@@ -395,7 +393,7 @@ settings in nekRS that do not need to be exposed to the typical user, but that p
 a developer may want to modify for testing purposes.
 
 ``UDF_Setup(nrs_t* nrs)``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This user-defined function is passed the nekRS simulation object ``nrs``. This function
 is called once at the beginning of the simulation *after* initializing the mesh, solution
@@ -406,9 +404,14 @@ commonly used to:
 2. Assign function pointers to user-defined source terms and material properties
 
 Any other additional setup actions that depend on initialization of the solution arrays
-and mesh can of course also be placed in this function. See the :ref:`Detailed Usage <detailed>`
-page for examples of the use of this function.
+and mesh can of course also be placed in this function.
 
+Specifying Initial Conditions
+"""""""""""""""""""""""""""""
+
+Initial conditions are specified by looping over all :term:`GLL` points and assigning
+values based on the position and user-defined parameters. See the :ref:`Setting Initial Conditions <setting_ICs>`
+section for an example on the use of this function for setting initial conditions.
 
 Specifying Custom Source Terms and Properties
 """""""""""""""""""""""""""""""""""""""""""""
@@ -447,28 +450,16 @@ The ``udf.uEqnSource`` allows specification of a momentum source, such as a grav
 a friction form loss. The ``udf.sEqnSource`` allows specification of a source term for the passive
 scalars. For a temperature passive scalar, this source term might represent a volumetric heat source,
 while for a chemical concentration passive scalar, this source term could represent a mass
-source. The ``udf.properties`` allows specification of custom material properties for the flow,
-which can be a function of the flow state as well as position and time. Finally, ``udf.div``
+source.
+
+The ``udf.properties`` allows specification of custom material properties for the flow,
+which can be a function of the flow state as well as position and time. See the
+:ref:`Setting Custom Properties <custom_properties>` section for an example of setting custom
+properties.
+
+Finally, ``udf.div``
 allows specification of the thermal divergence term needed for the low Mach formulation.
-
-As an example, the following code snippet shows how to set custom source terms and material
-properties for both the flow and passive scalar equations.
-
-.. code-block:: cpp
-
-   void UDF_Setup(nrs_t *nrs)
-   {
-     udf.sEqnSource = &my_heat_src_func;
-     udf.uEqnSource = &my_gravity_func;
-   }
-
-   void my_heat_src_func(nrs_t* nrs, dfloat time, occa::memory o_S, occa::memory o_FS)
-   {
-     mesh_t* mesh = nrs->mesh;
-     int num_quadrature_points = mesh->Np * mesh->Nelements;
-
-     for (int i = 0; i < num_quadrature_points; ++i)
-   }
+See the :ref:`Detailed Usage <detailed>` page for an example of each of these use cases.
 
 Legacy Option (.usr)
 ^^^^^^^^^^^^^^^^^^^^
@@ -478,6 +469,8 @@ Legacy Option (.usr)
 User-Defined Device Functions (.oudf)
 _____________________________________
 
-.. rubric:: Footnoes
+This file contains all user-defined functions that are to run on the device.
+
+.. rubric:: Footnotes
 
 .. [#f1] While the heading for ``Mesh File (.re2)`` seems to suggest that the contents refer only to the ``.re2`` format, the actual text description still points to the legacy ``.rea`` format.
