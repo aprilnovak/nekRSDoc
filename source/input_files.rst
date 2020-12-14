@@ -324,6 +324,8 @@ path to avoid typing out the full directory path for each usage.
 See the :ref:`Detailed Usage <detailed>` page for examples demonstrating conversion of Exodus
 and Gmsh meshes into ``.re2`` format.
 
+.. _nek5000_mesh:
+
 Nek5000 Script-Based Meshing
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -404,55 +406,9 @@ commonly used to:
 2. Assign function pointers to user-defined source terms and material properties
 
 Any other additional setup actions that depend on initialization of the solution arrays
-and mesh can of course also be placed in this function. A few examples are now provided
-for each of these use cases.
+and mesh can of course also be placed in this function. See the :ref:`Detailed Usage <detailed>`
+page for examples of the use of this function.
 
-Setting Initial Conditions
-""""""""""""""""""""""""""
-
-As an example for using the ``UDF_Setup`` function to set initial conditions, consider
-the following code snippet, which sets initial conditions for all three components of
-velocity, the pressure, and two passive scalars. Because these initial conditions will
-be a function of space, we must first obtain the mesh information, for which we
-use the ``nrs->mesh`` pointer. All solution fields are stored in nekRS in terms of the
-quadrature points (also referred to as the :term:`GLL` points). So, we will apply
-the initial conditions by looping over all of these quadrature points, which for
-the current :term:`MPI` process is equal to ``mesh->Np``, or the number of quadrature
-points per element, and ``mesh->Nelements``, the number of elements on this process.
-
-Next, we can get the :math:`x`, :math:`y`, and :math:`z` coordinates for the current
-quadrature point with the ``x``, ``y``, and ``z`` arrays on the ``mesh`` object.
-Finally, we programmatically set initial conditions for the solution fields. ``nrs->U``
-is a single array that holds all three components of velocity; the ``nrs->fieldOffset``
-variable is used to shift between components in this array. ``nrs->P`` represents the
-pressure. Finally, ``nrs->S`` is a single array that holds all of the passive scalars.
-Similar to the offset performed to index into the velocity array, the
-``nrs->cds->fieldOffset`` variable is used to shift between components in the ``nrs->S``
-array. Note that if temperature is present in your problem, it will *always* be the
-first passive scalar.
-
-.. code-block:: cpp
-
-   void UDF_Setup(nrs_t *nrs)
-   {
-    mesh_t* mesh = nrs->mesh;
-    int num_quadrature_points = mesh->Np * mesh->Nelements;
-
-    for (int n = 0; n < num_quadrature_points; n++) {
-      float x = mesh->x[n];
-      float y = mesh->y[n];
-      float z = mesh->z[n];
-
-      nrs->U[n + 0 * nrs->fieldOffset] = sin(x) * cos(y) * cos(z);
-      nrs->U[n + 1 * nrs->fieldOffset] = -cos(x) * sin(y) * cos(z);
-      nrs->U[n + 2 * nrs->fieldOffset] = 0;
-
-      nrs->P[n] = 101325.0;
-
-      nrs->S[n + 0 * nrs->cds->fieldOffset] = 573.0;
-      nrs->S[n + 1 * nrs->cds->fieldOffset] = 100.0 + z;
-    }
-   }
 
 Specifying Custom Source Terms and Properties
 """""""""""""""""""""""""""""""""""""""""""""
