@@ -166,6 +166,9 @@ be overriding those properties in our function.
   conductivity = 3.5
   rhoCp = 2e5
 
+Also suppose that our problem contains conjugate heat transfer, such that some of
+the mesh is fluid while some of the mesh is solid.
+
 In ``UDF_Setup``, we next need to assign an address to the ``udf.properties`` function
 pointer to a function with the correct signature where we eventually assign our custom
 properties. Our ``UDF_Setup`` function would be as follows.
@@ -191,10 +194,55 @@ material properties. Its name is arbitrary, but it must have the following signa
 This function is called *after* the solve has been performed on each time step, so the
 material properties are lagged by one time step with respect to the simulation.
  
-Suppose we would like to set :math:`\rho=1000.0` and :math:`\mu=2.1e-5 e^{-T/500}` for
-the flow equations; :math:`\rho C_p=2e3(1000+\phi_0)` and :math:`k=2.5` for the first
-passive scalar :math:`\phi_0`; and :math:`\rho C_p=0` and :math:`k=5+\phi_0` for the
-second passive scalar :math:`\phi_1`. Our material property function would be as follows.
+Suppose we would like to set :math:`\rho=1000.0` and :math:`\mu=2.1e-5 e^{-\phi_0/500}(1+z)` for
+the flow equations; because only the fluid domain has flow, we do not need to set
+these properties on the solid part of the domain. For the first passive scalar
+:math:`\phi_0`, we would
+like to set :math:`(\rho C_p)_f=2e3(1000+PV_x)` and :math:`k_f=2.5` in the fluid
+domain, and :math:`(\rho C_p)_s=2e3(1000+PV_x)` and :math:`k_s=3.5` in the solid domain.
+Here, :math:`P` is the thermodynamic pressure and :math:`V_x` is the :math:`x`-component velocity.
+For the second passive scalar :math:`\phi_1`, we would like to set
+:math:`\rho C_p=0` and :math:`k=5+\phi_0` in both the fluid and solid domains.
+Our material property function would be as follows. Note that these boundary conditions
+are selected just to be comprehensive and show all possible options for setting
+constant and non-constant properties with dependencies on properties - they do not
+necessarily represent any realistic physical case.
+
+.. code-block:: cpp
+
+   void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+     occa::memory o_UProp, occa::memory o_SProp)
+   {
+     mesh_t* mesh = nrs->mesh;
+
+     // viscosity and density for the flow equations
+     const occa::memory o_mue = o_UProp.slice(0 * nrs->fieldOffset * sizeof(dfloat));
+     viscosityCorrelationKernel(mesh->Nelements, mesh->z, o_S, nrs->o_elementInfo, o_mue);
+
+     const occa::memory o_rho = o_UProp.slice(1 * nrs->fieldOffset * sizeof(dfloat));    
+     constantFillKernel(nrs->mesh->Nelements, 1000.0, 0.0, nrs->o_elementInfo, o_rho);
+
+     // conductivity and rhoCp for the first passive scalar
+     int scalar_number = 0;
+     const occa::memory o_con = o_SProp.slice((0 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     constantFillKernel(mesh->Nelements, 2.5, 3.5, o_con);
+
+     const occa::memory o_rhocp = o_SProp.slice((1 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     heatCapacityKernel(mesh->Nelements, o_U, nrs->o_P, nrs->o_elementInfo, o_rhocp);
+
+     // conductivity and rhoCp for the second passive scalar
+     scalar_number = 1;
+     const occa::memory o_con_2 = o_SProp.slice((0 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     conductivityKernel(mesh->Nelements, o_S, nrs->o_elementInfo, o_con_2);
+
+     const occa::memory o_rhocp_2 = o_SProp.slice((1 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     constantFillKernel(mesh->Nelements, 0.0, 0.0, nrs->o_elementInfo, o_rhocp_2);
+   }
+
 
 The ``o_UProp`` and ``o_SProp`` arrays hold all material
 property information for the flow equations and passive scalar equations, respectively.
@@ -217,42 +265,8 @@ is ``cds->fieldOffset``. Finally, the offset in the ``o_SProp`` array to get the
 for the second passive scalar is ``2 * cds->fieldOffset``, while the offset to get the
 heat capacity for the second passive scalar is ``3 * cds->fieldOffset``.
 
-The ``viscosityCorrelationKernel``, ``constantFillKernel``, ``heatCapacityCorrelationKernel``,
-and ``conductivityCorrelationKernel`` functions are all user-defined device kernels. These
-functions must be defined in the ``.oudf`` file.
-
-.. code-block:: cpp
-
-   void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
-     occa::memory o_UProp, occa::memory o_SProp)
-   {
-     // viscosity and density for the flow equations
-     const occa::memory o_mue = o_UProp.slice(0 * nrs->fieldOffset * sizeof(dfloat));
-     viscosityCorrelationKernel(nrs->mesh->Nelements, o_mue);
-
-     const occa::memory o_rho = o_UProp.slice(1 * nrs->fieldOffset * sizeof(dfloat));    
-     constantFillKernel(nrs->mesh->Nelements, 1000.0, 0, nrs->o_elementInfo, o_rho);
-
-     // conductivity and rhoCp for the first passive scalar
-     int scalar_number = 0;
-     const occa::memory o_con = o_SProp.slice((0 + 2 * scalar_number) *
-       cds->fieldOffset * sizeof(dfloat));
-     heatCapacityCorrelationKernel(nrs->mesh->Nelements, o_con);
-
-     const occa::memory o_rhocp = o_SProp.slice((1 + 2 * scalar_number) *
-       cds->fieldOffset * sizeof(dfloat));
-     constantFillKernel(nrs->mesh->Nelements, 2.5, 0, nrs->o_elementInfo, o_rhocp);
-
-     // conductivity and rhoCp for the second passive scalar
-     scalar_number = 1;
-     const occa::memory o_con_2 = o_SProp.slice((0 + 2 * scalar_number) *
-       cds->fieldOffset * sizeof(dfloat));
-     constantFillKernel(nrs->mesh->Nelements, 0.0, 0, nrs->o_elementInfo, o_con_2);
-
-     const occa::memory o_rhocp_2 = o_SProp.slice((1 + 2 * scalar_number) *
-       cds->fieldOffset * sizeof(dfloat));
-     conductivityCorrelationKernel(nrs->mesh->Nelements, o_rhocp_2);
-   }
-
+The ``viscosityCorrelationKernel``, ``constantFillKernel``, ``heatCapacityKernel``,
+and ``conductivityKernel`` functions are all user-defined device kernels. These
+functions must be defined in the ``.oudf`` file, and the names are arbitrary.
 
 
