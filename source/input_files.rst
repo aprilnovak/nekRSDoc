@@ -334,7 +334,8 @@ A number of meshing scripts ship with the :term:`Nek5000` dependency, which allo
 you to directly create ``.re2`` format meshes without the need of commercial meshing
 tools. These scripts, such as ``genbox``, take user input related to the desired
 grid spacing to generate meshes for fairly simple geometries. Please consult the
-:term:`Nek5000` documentation for more information on the use of these scripts.
+`Nek5000 documentation <http://nek5000.github.io/NekDoc/index.html>`__
+for more information on the use of these scripts.
 
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^

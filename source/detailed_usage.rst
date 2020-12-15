@@ -68,6 +68,7 @@ for the three components of velocity;
 two passive scalars indicated generically as :math:`\phi_0` and :math:`\phi_1`.
 
 .. note::
+
   If present, the temperature variable is represented internally in nekRS as a passive
   scalar, since the form of the equation is the same as those solver for other passive
   scalars such as chemical concentration.
@@ -112,6 +113,11 @@ array.
       nrs->S[n + 1 * nrs->cds->fieldOffset] = 100.0 + z;
     }
    }
+
+.. _defining_variables_for_device:
+
+Defining Variables to Access in Device Kernels
+----------------------------------------------
 
 .. _boundary_conditions:
 
@@ -210,6 +216,12 @@ necessarily represent any realistic physical case.
 
 .. code-block:: cpp
 
+   // declare all the kernels we will be writing
+   static occa::kernel viscosityKernel;
+   static occa::kernel constantFillKernel;
+   static occa::kernel heatCapacityKernel;
+   static occa::kernel conductivityKernel;
+
    void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
      occa::memory o_UProp, occa::memory o_SProp)
    {
@@ -217,10 +229,10 @@ necessarily represent any realistic physical case.
 
      // viscosity and density for the flow equations
      const occa::memory o_mue = o_UProp.slice(0 * nrs->fieldOffset * sizeof(dfloat));
-     viscosityCorrelationKernel(mesh->Nelements, mesh->z, o_S, nrs->o_elementInfo, o_mue);
+     viscosityKernel(mesh->Nelements, mesh->z, o_S, nrs->o_elementInfo, o_mue);
 
      const occa::memory o_rho = o_UProp.slice(1 * nrs->fieldOffset * sizeof(dfloat));    
-     constantFillKernel(nrs->mesh->Nelements, 1000.0, 0.0, nrs->o_elementInfo, o_rho);
+     constantFillKernel(nrs->mesh->Nelements, 1000.0, 0.0 /* dummy */, nrs->o_elementInfo, o_rho);
 
      // conductivity and rhoCp for the first passive scalar
      int scalar_number = 0;
@@ -243,7 +255,6 @@ necessarily represent any realistic physical case.
      constantFillKernel(mesh->Nelements, 0.0, 0.0, nrs->o_elementInfo, o_rhocp_2);
    }
 
-
 The ``o_UProp`` and ``o_SProp`` arrays hold all material
 property information for the flow equations and passive scalar equations, respectively.
 In this function, you see six "slice" operations performed on ``o_UProp`` and ``o_SProp``
@@ -265,8 +276,76 @@ is ``cds->fieldOffset``. Finally, the offset in the ``o_SProp`` array to get the
 for the second passive scalar is ``2 * cds->fieldOffset``, while the offset to get the
 heat capacity for the second passive scalar is ``3 * cds->fieldOffset``.
 
-The ``viscosityCorrelationKernel``, ``constantFillKernel``, ``heatCapacityKernel``,
+The ``viscosityKernel``, ``constantFillKernel``, ``heatCapacityKernel``,
 and ``conductivityKernel`` functions are all user-defined device kernels. These
-functions must be defined in the ``.oudf`` file, and the names are arbitrary.
+functions must be defined in the ``.oudf`` file, and the names are arbitrary. For each
+of these kernels, we declare them at the top of the ``.udf`` file. In order to link
+against our device kernels, we must instruct nekRS to use its just-in-time compilation
+to build those kernels. We do this in ``UDF_LoadKernels`` by calling the
+``udfBuildKernel`` function for each kernel. The second argument to the ``udfBuildKernel``
+function is the name of the kernel, which appears as the actual function name of
+the desired kernel in the ``.oudf`` file.
 
+.. code-block:: cpp
+
+  void UDF_LoadKernels(nrs_t* nrs)
+  {
+    viscosityKernel = udfBuildKernel(nrs, "viscosity");
+    constantFillKernel = udfBuildKernel(nrs, "constantFill");
+    heatCapacityKernel = udfBuildKernel(nrs, "heatCapacity");
+    conductivityKernel = udfBuildKernel(nrs, "conductivity");
+  }
+
+In order to write these device kernels, you will need some background in programming
+with :term:`OCCA`. Please consult the `OCCA documentation <https://libocca.org/#/>`__
+before proceeding.
+
+First, let's look at the ``constantFill`` kernel. Here, we want to write a device kernel
+that assigns a constant value to a material property. So that we can have a general
+function, we will write this such that it can be used to set constant (but potentially
+different) properties in the fluid and solid phases for conjugate heat transfer
+applications.
+
+.. note::
+  
+  Material properties for the flow equations (i.e. viscosity and density) do not
+  *need* to be specified in the solid phase. If you define flow properties in solid
+  regions, they are simply not used.
+
+The ``constantFill`` kernel is defined in the ``.oudf`` file as follows [#f1]_. :term:`OCCA`
+kernels operate on the device. As input parameters, they can take non-pointer objects
+on the host (such as ``Nelements``, ``fluid_val``, and ``solid_val`` in this example),
+as well as pointers to objects of type ``occa::memory``, or device-side memory. The
+device-side objects are indicated with the ``@restrict`` tag. For this example, we
+loop over all the elements. The ``eInfo`` parameter represents a mask, and takes a value
+of zero for solid elements and a value of unity for fluid elements. Next, we loop over
+all of the :term:`GLL` points on the element, or ``p_Np``. This variable is set within
+nekRS to be the same as ``mesh->Np`` using the device variable feature described in
+the :ref:`Defining Variables to Access in Device Kernels <defining_variables_for_device>`
+section. This particular variable is always available, and you do not need to pass it
+explicitly into device functions. Finally, we set the value of the ``property`` to the
+value specified in the function parameters.
+
+.. code-block:: cpp
+
+   @kernel void constantFill(const dlong Nelements, const dfloat fluid_val,
+             const dfloat solid_val, @restrict const dlong * eInfo, @restrict dfloat property)
+   {
+     for(dlong e = 0; e < Nelements; ++e ; @outer(0)) {
+       const bool is_solid = eInfo[e];
+
+       for(int n = 0; n < p_Np; ++n ; @inner(0)) {
+         const int id = e * p_Np + n;
+
+         property[id] = fluid_val;
+
+         if (is_solid)
+           property[id] = solid_val;
+       }
+     }
+   }
+
+.. rubric:: Footnotes
+
+.. [#f1] :term:`OCCA` kernels are programmed in OKL, a thin extension to C++. Unfortunately, the ``pygmentize`` Python syntax highlighter does not recognize OKL syntax, so these examples here lack syntax highlighting.
 
