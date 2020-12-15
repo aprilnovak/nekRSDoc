@@ -229,7 +229,8 @@ necessarily represent any realistic physical case.
 
      // viscosity and density for the flow equations
      const occa::memory o_mue = o_UProp.slice(0 * nrs->fieldOffset * sizeof(dfloat));
-     viscosityKernel(mesh->Nelements, mesh->z, o_S, nrs->o_elementInfo, o_mue);
+     const occa::memory first_scalar = o_S.slice(0 * cds->fieldOffset * sizeof(dfloat));
+     viscosityKernel(mesh->Nelements, first_scalar, mesh->o_z, o_mue);
 
      const occa::memory o_rho = o_UProp.slice(1 * nrs->fieldOffset * sizeof(dfloat));    
      constantFillKernel(nrs->mesh->Nelements, 1000.0, 0.0 /* dummy */, nrs->o_elementInfo, o_rho);
@@ -238,17 +239,17 @@ necessarily represent any realistic physical case.
      int scalar_number = 0;
      const occa::memory o_con = o_SProp.slice((0 + 2 * scalar_number) *
        cds->fieldOffset * sizeof(dfloat));
-     constantFillKernel(mesh->Nelements, 2.5, 3.5, o_con);
+     constantFillKernel(mesh->Nelements, 2.5, 3.5, nrs->o_elementInfo, o_con);
 
      const occa::memory o_rhocp = o_SProp.slice((1 + 2 * scalar_number) *
        cds->fieldOffset * sizeof(dfloat));
-     heatCapacityKernel(mesh->Nelements, o_U, nrs->o_P, nrs->o_elementInfo, o_rhocp);
+     heatCapacityKernel(mesh->Nelements, o_U, nrs->o_P, o_rhocp);
 
      // conductivity and rhoCp for the second passive scalar
      scalar_number = 1;
      const occa::memory o_con_2 = o_SProp.slice((0 + 2 * scalar_number) *
        cds->fieldOffset * sizeof(dfloat));
-     conductivityKernel(mesh->Nelements, o_S, nrs->o_elementInfo, o_con_2);
+     conductivityKernel(mesh->Nelements, first_scalar, o_con_2);
 
      const occa::memory o_rhocp_2 = o_SProp.slice((1 + 2 * scalar_number) *
        cds->fieldOffset * sizeof(dfloat));
@@ -298,7 +299,7 @@ the desired kernel in the ``.oudf`` file.
 
 In order to write these device kernels, you will need some background in programming
 with :term:`OCCA`. Please consult the `OCCA documentation <https://libocca.org/#/>`__
-before proceeding.
+before proceeding [#f1]_.
 
 First, let's look at the ``constantFill`` kernel. Here, we want to write a device kernel
 that assigns a constant value to a material property. So that we can have a general
@@ -312,11 +313,34 @@ applications.
   *need* to be specified in the solid phase. If you define flow properties in solid
   regions, they are simply not used.
 
-The ``constantFill`` kernel is defined in the ``.oudf`` file as follows [#f1]_. :term:`OCCA`
+The ``constantFill`` kernel is defined in the ``.oudf`` file as follows [#f2]_. :term:`OCCA`
 kernels operate on the device. As input parameters, they can take non-pointer objects
 on the host (such as ``Nelements``, ``fluid_val``, and ``solid_val`` in this example),
 as well as pointers to objects of type ``occa::memory``, or device-side memory. The
-device-side objects are indicated with the ``@restrict`` tag. For this example, we
+device-side objects are indicated with the ``@restrict`` tag. 
+
+.. note::
+
+  Device-side memory in nekRS is by convention preceded with a ``o_`` prefix in order
+  to differentiate from the host-side objects. In the initialization of nekRS, most of
+  the simulation data is copied over to the device. All calculations are done on the
+  device. The device-side solution is then only copied back onto the host for the
+  purpose of writing output files.
+
+.. warning::
+
+  Because nekRS by default only copies the device-side solution back to the host for
+  the purpose of writing output files, if you touch any host-side objects in your
+  user-defined functions, such as in ``UDF_ExecuteStep``, you must ensure
+  that you only use the host-side objects after they have been copied from device back
+  to the host. Otherwise, they would not be "up to date." You can ensure that the host-
+  side objects reflect the real-time nekRS solution by either (a) only touching the
+  host-side solution on output writing steps (which can be determined based on the
+  ``nrs->isOutputStep`` variable), or (b) calling the appropriate routines in nekRS
+  to force data to be copied from the device back to the host. For the latter option,
+  please refer to the :ref:`Copying From Device to Host <copy_device_to_host>` section.
+
+For this example, we
 loop over all the elements. The ``eInfo`` parameter represents a mask, and takes a value
 of zero for solid elements and a value of unity for fluid elements. Next, we loop over
 all of the :term:`GLL` points on the element, or ``p_Np``. This variable is set within
@@ -329,12 +353,14 @@ value specified in the function parameters.
 .. code-block:: cpp
 
    @kernel void constantFill(const dlong Nelements, const dfloat fluid_val,
-             const dfloat solid_val, @restrict const dlong * eInfo, @restrict dfloat property)
+             const dfloat solid_val, @restrict const dlong* eInfo, @restrict dfloat* property)
    {
-     for(dlong e = 0; e < Nelements; ++e ; @outer(0)) {
+     for (dlong e = 0; e < Nelements; ++e ; @outer(0))
+     {
        const bool is_solid = eInfo[e];
 
-       for(int n = 0; n < p_Np; ++n ; @inner(0)) {
+       for (int n = 0; n < p_Np; ++n ; @inner(0))
+       {
          const int id = e * p_Np + n;
 
          property[id] = fluid_val;
@@ -345,7 +371,66 @@ value specified in the function parameters.
      }
    }
 
+Now, let's look at the slightly more complex ``conductivity`` kernel. Here, our function
+signature is very different from that of the ``constantFill`` kernel. While we still
+pass the number of elements, we no longer need to check whether we are in a fluid element
+or a solid element, since the conductivity for the second passive scalar is going to be
+the same in both phases. All that we need to pass in is the coupled scalar ``scalar``, 
+or :math:`\phi_0` in our material property correlation :math:`k=5+\phi_0` that we listed
+earlier. The ``property`` passed in then should represent the conductivity we are setting.
+
+.. code-block:: cpp
+
+  @kernel void conductivity(const dlong Nelements, @restrict const dfloat* scalar,
+            @restrict dfloat* property)
+  {
+     for (dlong e = 0; e < Nelements; ++e ; @outer(0))
+     {
+       for (int n = 0; n < p_Np; ++n ; @inner(0))
+       {
+         const int id = e * p_Np + n;
+         const dfloat scalar = scalar[id];
+
+         property[id] = 5.0 + scalar;
+       }
+     }
+  }
+
+A key aspect of writing device kernels is that the device kernel can only operate on
+non-pointer objects or pointers to device memory. Whatever the form of your material properties,
+you just need to be sure to pass in all necessary information. Now, let's look at the even
+more complex ``viscosity`` kernel. Here, we need to pass in the scalar :math:`\phi_0` and the
+:math:`z`-coordinate that appear in the viscosity model.
+
+.. code-block:: cpp
+
+  @kernel void viscosity(const dlong Nelements, @restrict const dfloat* scalar,
+            @restrict const dfloat* z, @restrict dfloat* property)
+  {
+     for (dlong e = 0; e < Nelements; ++e ; @outer(0))
+     {
+       for (int n = 0; n < p_Np; ++n ; @inner(0))
+       {
+         const int id = e * p_Np + n;
+         const dfloat scalar = scalar[id];
+         const dfloat z = z[id];
+
+         property[id] = 2.1E-5 * exp(-scalar / 500.0) * (1.0 + z);
+       }
+     }
+  }
+
+The final kernel that wraps up this example is the ``heatCapacity`` kernel.
+
+.. _copy_device_to_host:
+
+Copying From Device to Host
+----------------------------------------
+
+
+
 .. rubric:: Footnotes
 
-.. [#f1] :term:`OCCA` kernels are programmed in OKL, a thin extension to C++. Unfortunately, the ``pygmentize`` Python syntax highlighter does not recognize OKL syntax, so these examples here lack syntax highlighting.
+.. [#f1] There are many different ways to write :term:`OCCA` kernels. The examples shown here are by no means the most optimal form, and are only intended for illustration.
+.. [#f2] :term:`OCCA` kernels are programmed in OKL, a thin extension to C++. Unfortunately, the ``pygmentize`` Python syntax highlighter does not recognize OKL syntax, so these examples here lack syntax highlighting.
 
