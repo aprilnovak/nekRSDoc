@@ -92,7 +92,7 @@ array.
 
 .. code-block:: cpp
 
-   void UDF_Setup(nrs_t *nrs)
+   void UDF_Setup(nrs_t* nrs)
    {
     mesh_t* mesh = nrs->mesh;
     int num_quadrature_points = mesh->Np * mesh->Nelements;
@@ -118,8 +118,141 @@ array.
 Setting Boundary Conditions with Device Kernels
 -----------------------------------------------
 
+Initial conditions 
+
 .. _custom_properties:
 
 Setting Custom Properties with ``UDF_Setup``
 --------------------------------------------
+
+Custom material properties can be set for the flow and passive scalar equations
+by assigning the ``udf.properties`` function pointer to a function with a signature
+that takes the ``nrs`` pointer to the nekRS solution object, the simulation time
+``time``, the velocity solution on the device ``o_U``, the passive scalar solution
+on the device ``o_S``, the flow material properties on the device ``o_UProp``,
+and the passive scalar material properties on the device ``o_SProp``.
+
+This section provides an example of setting :math:`\mu` and :math:`\rho` for the flow
+equations and :math:`k` and :math:`\rho C_p` for two passive scalars. Suppose our problem
+contains velocity, pressure, temperature, and two passive scalars. The ``[VELOCITY]``,
+``[PRESSURE]``, ``[TEMPERATURE]``, ``[SCALAR01]``, and ``[SCALAR02]`` sections of the
+``.par`` file would be as follows. Because we will be setting custom properties for
+the pressure, velocity, and first two passive scalars (temperature and ``SCALAR01``),
+we can let nekRS assign the default values of unity to all properties for those
+governing equations until we override them in our custom property function. We still
+need to define the material properties for ``SCALAR02``, however, because we will not
+be overriding those properties in our function.
+
+.. code-block::
+
+  [PRESSURE]
+  residualTol = 1e-6
+
+  [VELOCITY]
+  boundaryTypeMap = v, O, W
+  residualTol = 1e-8
+
+  [TEMPERATURE]
+  boundaryTypeMap = t, O, I
+  residualTol = 1e-8
+
+  [SCALAR01]
+  boundaryTypeMap = t, O, I
+  residualTol = 1e-8
+
+  [SCALAR02]
+  boundaryTypeMap = t, O, t
+  residualTol = 1e-7
+  conductivity = 3.5
+  rhoCp = 2e5
+
+In ``UDF_Setup``, we next need to assign an address to the ``udf.properties`` function
+pointer to a function with the correct signature where we eventually assign our custom
+properties. Our ``UDF_Setup`` function would be as follows.
+
+.. code-block:: cpp
+
+   void UDF_Setup(nrs_t* nrs)
+   {
+     udf.properties = &material_props;
+   }
+
+Here, ``material_props`` is our name for a function in the ``.udf`` file that sets the
+material properties. Its name is arbitrary, but it must have the following signature.
+
+.. code-block:: cpp
+
+   void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+     occa::memory o_UProp, occa::memory o_SProp)
+   {
+     // set the material properties
+   }
+ 
+This function is called *after* the solve has been performed on each time step, so the
+material properties are lagged by one time step with respect to the simulation.
+ 
+Suppose we would like to set :math:`\rho=1000.0` and :math:`\mu=2.1e-5 e^{-T/500}` for
+the flow equations; :math:`\rho C_p=2e3(1000+\phi_0)` and :math:`k=2.5` for the first
+passive scalar :math:`\phi_0`; and :math:`\rho C_p=0` and :math:`k=5+\phi_0` for the
+second passive scalar :math:`\phi_1`. Our material property function would be as follows.
+
+The ``o_UProp`` and ``o_SProp`` arrays hold all material
+property information for the flow equations and passive scalar equations, respectively.
+In this function, you see six "slice" operations performed on ``o_UProp`` and ``o_SProp``
+in order to access the two individual properties (diffusive constant and time derivative constant)
+for the three equations (momentum, scalar 0, and scalar 1). The diffusive constant
+(:math:`\mu` for the momentum equations and :math:`k` for the passive scalar equations)
+is always listed first in these arrays, while the coefficient on the time derivative
+(:math:`\rho C_p` for the momentum equations and :math:`\rho C_p` for the passive scalar
+equations) is always listed second in these arrays.
+
+To further elaborate, :math:`\mu` and :math:`\rho` are accessed as slices on ``o_UProp``.
+Because viscosity is listed before density, the offset in the ``o_UProp`` array to get
+the viscosity is zero, while the offset to get the density is ``nrs->fieldOffset``.
+:math:`k` and :math:`\rho C_p` are accessed as slices in ``o_SProp``. Because the
+passive scalars are listed in order and the conductivity is listed first for each user,
+the offset in the ``o_SProp`` array to get the conductivity for the first passive scalar
+is zero, while the offset to get the heat capacity for the first passive scalar 
+is ``cds->fieldOffset``. Finally, the offset in the ``o_SProp`` array to get the conductivity
+for the second passive scalar is ``2 * cds->fieldOffset``, while the offset to get the
+heat capacity for the second passive scalar is ``3 * cds->fieldOffset``.
+
+The ``viscosityCorrelationKernel``, ``constantFillKernel``, ``heatCapacityCorrelationKernel``,
+and ``conductivityCorrelationKernel`` functions are all user-defined device kernels. These
+functions must be defined in the ``.oudf`` file.
+
+.. code-block:: cpp
+
+   void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+     occa::memory o_UProp, occa::memory o_SProp)
+   {
+     // viscosity and density for the flow equations
+     const occa::memory o_mue = o_UProp.slice(0 * nrs->fieldOffset * sizeof(dfloat));
+     viscosityCorrelationKernel(nrs->mesh->Nelements, o_mue);
+
+     const occa::memory o_rho = o_UProp.slice(1 * nrs->fieldOffset * sizeof(dfloat));    
+     constantFillKernel(nrs->mesh->Nelements, 1000.0, 0, nrs->o_elementInfo, o_rho);
+
+     // conductivity and rhoCp for the first passive scalar
+     int scalar_number = 0;
+     const occa::memory o_con = o_SProp.slice((0 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     heatCapacityCorrelationKernel(nrs->mesh->Nelements, o_con);
+
+     const occa::memory o_rhocp = o_SProp.slice((1 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     constantFillKernel(nrs->mesh->Nelements, 2.5, 0, nrs->o_elementInfo, o_rhocp);
+
+     // conductivity and rhoCp for the second passive scalar
+     scalar_number = 1;
+     const occa::memory o_con_2 = o_SProp.slice((0 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     constantFillKernel(nrs->mesh->Nelements, 0.0, 0, nrs->o_elementInfo, o_con_2);
+
+     const occa::memory o_rhocp_2 = o_SProp.slice((1 + 2 * scalar_number) *
+       cds->fieldOffset * sizeof(dfloat));
+     conductivityCorrelationKernel(nrs->mesh->Nelements, o_rhocp_2);
+   }
+
+
 

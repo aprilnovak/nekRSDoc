@@ -210,7 +210,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
   ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
   ``conductivity`` parameter. If a negative value is provided, the
   conductivity is internally set to :math:`1/|k|`, where :math:`k` is the value of the
-  ``conductivity`` key.
+  ``conductivity`` key. If not specified, this defaults to :math:`1.0`.
 
 **residualProjection** *<bool>*
 
@@ -224,7 +224,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
   Although this is name ``rho``, this parameter really represents the coefficient on the
   total derivative of the passive scalar. In other words, the analogue from the
   ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
-  ``rhoCp`` parameter.
+  ``rhoCp`` parameter. If not specified, this defaults to :math:`1.0`.
 
 ``TEMPERATURE`` section
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -236,7 +236,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **conductivity** *<real>*
   Constant thermal conductivity; if a negative value is provided, the thermal conductivity
   is internally set to :math:`1/|k|`, where :math:`k` is the value of the ``conductivity``
-  key.
+  key. If not specified, this defaults to :math:`1.0`.
 
 **residualProjection** *<bool>*
 
@@ -247,7 +247,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **residualTol** *<real>*
 
 **rhoCp** *<real>*
-  Constant volumetric isobaric specific heat.
+  Constant volumetric isobaric specific heat. If not specified, this defaults to :math:`1.0`.
 
 **solver** *none*
   You can turn off the solution of temperature by setting the solver to ``none``
@@ -260,7 +260,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
   by sideset ID.
 
 **density** *<real>*
-  Constant fluid density
+  Constant fluid density. If not specified, this defaults to :math:`1.0`.
 
 **residualProjection** *<bool>*
 
@@ -277,6 +277,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **viscosity** *<real>*
   Constant dynamic viscosity; if a negative value is provided, the dynamic viscosity is
   internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
+  If not specified, this defaults to :math:`1.0`.
 
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^
@@ -440,10 +441,10 @@ function signatures are as follows:
 * ``t`` is the current simulation time
 * ``o_U`` is the velocity solution on the device
 * ``o_S`` is the scalar solution on the device
-* ``o_FU``
-* ``o_SU``
-* ``o_Up``
-* ``o_Sp``
+* ``o_FU`` is the forcing term in the momentum equation
+* ``o_SU`` is the forcing term in the scalar equation(s)
+* ``o_Up`` is the material properties (:math:`\mu` and :math:`\rho`) for the momentum equation
+* ``o_Sp`` is the material properties (:math:`k` and :math:`\rho C_p`) for the scalar equation(s)
 * ``o_div``
 
 The ``udf.uEqnSource`` allows specification of a momentum source, such as a gravitational force, or
@@ -452,8 +453,9 @@ scalars. For a temperature passive scalar, this source term might represent a vo
 while for a chemical concentration passive scalar, this source term could represent a mass
 source.
 
-The ``udf.properties`` allows specification of custom material properties for the flow,
-which can be a function of the flow state as well as position and time. See the
+The ``udf.properties`` allows specification of custom material properties for the flow
+and passive scalar equations,
+which can be a function of the solution as well as position and time. See the
 :ref:`Setting Custom Properties <custom_properties>` section for an example of setting custom
 properties.
 
