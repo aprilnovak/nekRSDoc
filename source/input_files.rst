@@ -294,7 +294,7 @@ produced by either:
 There are three main limitations for the nekRS mesh:
 
 1. nekRS is currently, and for the forseeable future, restricted to 3-D hexahedral meshes.
-2-D and 1-D problems can be accommodated on these 3-D meshes by applying zero gradient
+Lower-dimensional problems can be accommodated on these 3-D meshes by applying zero gradient
 boundary conditions to all solution variables in directions perpendicular to the
 simulation plane or line, respectively. All source terms and material properties in the
 governing equations must therefore also be fixed in the off-interest directions.
@@ -306,6 +306,10 @@ beginning from 1.
 hexahedral element) and HEX20 (a twenty-node hexahedral element) elements.
 
 The following two sections describe how to generate a mesh in ``.re2`` format.
+If your problem contains conjugate heat transfer (i.e. the mesh consists of separate fluid
+and solid regions), you will need to take extra care to generate your mesh correctly. For
+conjugate heat transfer applications, see the
+:ref:`Creating a Mesh for Conjugate Heat Transfer <cht_mesh>` section.
 
 Converting an Existing Commercial Mesh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^

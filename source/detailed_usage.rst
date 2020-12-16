@@ -50,6 +50,38 @@ To convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
   Enter mesh dimension: 3
   Input (.msh) file name: my_mesh
 
+.. _cht_mesh:
+
+Creating a Mesh for Conjugate Heat Transfer
+-------------------------------------------
+
+nekRS uses a somewhat archaic method for differentiating between fluid and solid regions
+for conjugate heat transfer applications. Rather than block-restricting variables to
+particular regions of a single mesh, nekRS has two internal mesh representations that
+are stored on two different objects. The ``nrs_t`` struct, which encapsulates all of
+the nekRS simulation data related to the flow solution, has two mesh objects -
+the flow mesh ``nrs_t.mesh`` and the heat transfer mesh ``nrs_t.meshT``. Similarly,
+the ``cds_t`` struct, which encapsulates all of the nekRS simulation data related to the
+convection-diffusion passive scalar solution, has two mesh objects -
+the heat transfer mesh ``cds_t.mesh`` and the flow mesh ``cds_t.meshV``.
+
+.. note::
+
+  Only the temperature passive scalar uses the conjugate heat transfer mesh. All
+  other scalars are only solved on the flow mesh.
+
+If your problem does not have any
+conjugate heat transfer, then ``nrs_t.mesh`` is exactly the same as ``nrs_t.meshT``
+and ``cds_t.mesh`` is exactly the same as ``cds_t.meshV``.
+
+nekRS requires that the flow mesh be a subset of the heat transfer mesh. In other words,
+the flow mesh always has less than (or equal to, for cases without conjugate heat transfer)
+the number of elements in the heat transfer mesh. The archaic aspect of mesh generation
+is that you cannot simply use a standard commercial meshing tool and define fluid and solid
+regions according to block IDs - you must individually create the mesh for the fluid and
+the solid, and then merge them with the ``pretex`` script.
+
+
 .. _setting_ICs:
 
 Setting Initial Conditions with ``UDF_Setup``
