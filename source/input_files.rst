@@ -4,7 +4,7 @@ The nekRS Input Files
 =====================
 
 This page describes the input file structure and syntax needed to run a nekRS simulation.
-At a minimum, nekRS requires four files to run a problem - 
+A nekRS simulation is referred to as a "case," and at a minimum requires four files to run -
 
 * Parameter file, with ``.par`` extension
 * Mesh file, with ``.re2`` extension
@@ -12,22 +12,22 @@ At a minimum, nekRS requires four files to run a problem -
 * User-defined functions for the device, with ``.oudf`` extension
 
 The next four sections describe the structure and syntax for each of these four files.
-Because the :term:`Nek5000` code is somewhat of a predecessor to
+Because the :term:`Nek5000` code is a predecessor to
 nekRS, some aspects of the current nekRS input file design are selected to enable faster translation of
-:term:`Nek5000` input files into nekRS input files. All such
-:term:`Nek5000`-oriented settings will be referred to as "legacy" settings. Because these
-legacy settings require proficiency in Fortran, the formation of several additional input
-files, and in some cases, careful usage of structured text inputs, all new
-users are encouraged to adopt the nekRS-based problem setup.
+Nek5000 input files into nekRS input files. Because these
+Nek5000-based approaches require proficiency in Fortran, the inclusion of several additional input
+files, and in some cases, careful usage of fixed-format text inputs, all
+Nek5000-based methods for case setup are referred to here as "legacy" approaches.
+All new users are encouraged to adopt the nekRS-based problem setup.
 
-Note that each of the input files is described only in terms of its file extension (such as
+Each of the four required input files is described only in terms of its file extension (such as
 ``.par`` and ``.udf``). A full simulation "case" consists of all of these files with
 a common prefix. For instance, in the ``nekRS/examples/eddyPeriodic`` directory, you will see
 files named ``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``eddy.oudf``, where ``eddy`` is
 referred to as the case "name." The only restrictions on the case name are:
 
-1. It must be used as the prefix on all simulation files
-2. Typical restrictions for naming files for your operating system
+* It must be used as the prefix on all simulation files, and
+* Typical restrictions for naming files for your operating system
 
 The scope of this page is merely to introduce the format and purpose of the four
 files needed to set up a nekRS simulation. Much more detailed instructions are provided
@@ -38,7 +38,7 @@ _____________________
 
 Most information about the problem setup is defined in the parameter file. This file is organized
 in a number of sections, each with a number of keys. Values are assigned to these keys in order to
-control a number of aspects of the simulation.
+control the simulation settings.
 
 The general structure of the ``.par`` file is as
 follows, where ``FOO`` and ``BAR`` are both section names, with a number of (key, value) pairs.
@@ -285,31 +285,55 @@ Legacy Option (.rea)
 Mesh File (.re2)
 ________________
 
-The nekRS mesh file is provided in ``.re2`` format. This format can be
-produced by either:
+The nekRS mesh file is provided in a binary format with a nekRS-specific
+``.re2`` extension. This format can be produced by either:
 
-1. Converting a mesh made with commercial meshing software to ``.re2`` format
-2. Directly creating an ``.re2``-format mesh with nekRS-specific scripts
+* Converting a mesh made with commercial meshing software to ``.re2`` format, or
+* Directly creating an ``.re2``-format mesh with nekRS-specific scripts
 
 There are three main limitations for the nekRS mesh:
 
-1. nekRS is currently, and for the forseeable future, restricted to 3-D hexahedral meshes.
+* nekRS is restricted to 3-D hexahedral meshes.
+* The numeric IDs for the mesh boundaries must be ordered contiguously beginning from 1.
+* The ``.re2`` format only supports HEX8 and HEX 20 (eight- and twenty-node) hexahedral elements.
+
 Lower-dimensional problems can be accommodated on these 3-D meshes by applying zero gradient
 boundary conditions to all solution variables in directions perpendicular to the
 simulation plane or line, respectively. All source terms and material properties in the
 governing equations must therefore also be fixed in the off-interest directions.
 
-2. nekRS assumes that the numeric IDs for the mesh boundaries are ordered contiguously
-beginning from 1.
+For cases with conjugate heat transfer, nekRS uses an archaic process
+for differentiating between fluid and solid regions. Rather than block-restricting variables to
+particular regions of the same mesh, nekRS retains two independent mesh representations
+for the same problem. One of these meshes represents the flow domain, while the other
+represents the heat transfer domain. The ``nrs_t`` struct, which encapsulates all of
+the nekRS simulation data related to the flow solution, has two mesh objects -
+the flow mesh ``nrs_t.mesh`` and the heat transfer mesh ``nrs_t.meshT``. Similarly,
+the ``cds_t`` struct, which encapsulates all of the nekRS simulation data related to the
+convection-diffusion passive scalar solution, has two mesh objects -
+the heat transfer mesh ``cds_t.mesh`` and the flow mesh ``cds_t.meshV``.
+Note that only the temperature passive scalar uses the conjugate heat transfer mesh,
+even though the ``cds_t`` struct encapsulates information related to all other
+passive scalars (such as chemical concentration, or turbulent kinetic energy). All
+non-temperature scalars are only solved on the flow mesh.
 
-3. The ``.re2`` format only supports HEX8 (an eight-node
-hexahedral element) and HEX20 (a twenty-node hexahedral element) elements.
+.. warning::
 
-The following two sections describe how to generate a mesh in ``.re2`` format.
-If your problem contains conjugate heat transfer (i.e. the mesh consists of separate fluid
-and solid regions), you will need to take extra care to generate your mesh correctly. For
-conjugate heat transfer applications, see the
-:ref:`Creating a Mesh for Conjugate Heat Transfer <cht_mesh>` section.
+  When writing user-defined functions that rely on mesh information (such as boundary
+  IDs and spatial coordinates), you must take care to use the correct mesh representation
+  for your problem. For instance, to apply initial conditions to a flow variable, you
+  would need to loop over the number of quadrature points known on the ``nrs_t`` meshes,
+  rather than the ``cds_t`` meshes for the passive scalars.
+  Also note that the ``cds_t * cds`` object will not exist if your problem
+  does not have any passive scalars.
+
+nekRS requires that the flow mesh be a subset of the heat transfer mesh. In other words,
+the flow mesh always has less than (or equal to, for cases without conjugate heat transfer)
+the number of elements in the heat transfer mesh. Creating a mesh for conjugate heat
+transfer problems requires additional pre-processing steps that are described in the
+:ref:`Creating a Mesh for Conjugate Heat Tranfser <cht_mesh>` section. The remainder
+of this section describes how to generate a mesh in ``.re2`` format, assuming
+any pre-processing steps have been done for the special cases of conjugate heat transfer.
 
 Converting an Existing Commercial Mesh
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -317,17 +341,9 @@ Converting an Existing Commercial Mesh
 The most general and flexible approach for creating a mesh is to use commercial meshing software
 such as Cubit or Gmsh. After creating the mesh, it must be converted to the ``.re2`` binary format. Depending
 on the mesh format (such as Exodus II format or Gmsh format), a conversion script is used to
-convert the mesh to ``.re2`` format.
-
-:term:`Nek5000` is currently a dependency in the nekRS build system for some I/O tasks. Relevant
-to the present meshing discussion, a number of scripts shipped with :term:`Nek5000` are used to
-perform this mesh conversion process. These scripts are built as part of the nekRS build process
-and are available at ``nekRS/build/_deps/nek5000_content-src/tools``, so no extra steps are
-required on the user's end to access these scripts. You may want to add this directory to your
-path to avoid typing out the full directory path for each usage.
-
-See the :ref:`Converting a Mesh to .re2 Format <converting_mesh>` section for examples demonstrating conversion of Exodus
-and Gmsh meshes into ``.re2`` format.
+convert the mesh to ``.re2`` format. See the
+:ref:`Converting a Mesh to .re2 Format <converting_mesh>` section for examples demonstrating
+conversion of Exodus and Gmsh meshes into ``.re2`` format.
 
 .. _nek5000_mesh:
 
