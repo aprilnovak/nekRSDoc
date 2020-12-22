@@ -396,6 +396,18 @@ language as well as some knowledge of the nekRS source code internals.
 ``UDF_LoadKernels(nrs_t*  nrs)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+This user-defined function is used to load case-specific device kernels that are
+used in other UDF functions. For instance, if you add a custom forcing term to the
+momentum equations, you need to tell nekRS to compile that kernel by loading it in
+this function. The custom material property example shown in the
+:ref:`Setting Custom Properties with UDF_Setup <custom_properties>` section
+demonstrates how to load kernels with this function. The process is quite simple,
+and only involves:
+
+* Declaring all kernels as ``static occa::kernel`` at the top of the ``.udf`` file
+* Loading those kernels in ``UDF_LoadKernels``
+* Defining those kernels in the device user file, ``.oudf``
+
 ``UDF_Setup0(MPI_Comm comm, setupAide & options)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
