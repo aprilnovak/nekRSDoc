@@ -148,10 +148,95 @@ array.
     }
    }
 
+.. _grabbing_user:
+
+Grabbing User .par Settings
+---------------------------
+
 .. _defining_variables_for_device:
 
 Defining Variables to Access in Device Kernels
 ----------------------------------------------
+
+The customization of a nekRS problem to a specific case is one with both the host-side
+user functions in the ``.udf`` file, as well as device-side user functions in the ``.oudf``
+file. For convenience purposes, nekRS supports setting non-pointer-type variables in the
+``.udf`` file that are accessible in the device kernels in the ``.oudf`` file. This section
+shows an example of this usage.
+
+Suppose that a device kernel requires a parameter representing a pressure gradient, which
+is then used to determine a forcing kernel. One option would be to pass that pressure gradient
+to the device kernel through its function parameters. The kernel in the ``.oudf`` file
+would look something like the following.
+
+.. code-block::
+
+    @kernel void myForcingKernel(const dfloat dp_dx, /* more parameters */)
+    {
+      double foo = 2 * dp_dx;
+
+      // do something
+    }
+
+Alternatively, we can define a variable, ``p_dp_dx``, that we set from the ``.udf`` file.
+While this variable propagation can be done in any of the user-defined functions that
+has ``nrs`` as an input parameter, for consistency purposes we will use the ``UDF_LoadKernels``
+function for this purpose.
+
+.. note:
+
+  The convention is to precede any of these host-side kernel variable
+  definitions with a ``p_``.
+
+To set ``p_dp_dx`` to 5.5 from the ``.udf`` file, write to the ``kernelInfo`` object
+on the ``nrs`` object. The ``defines/<p_name>`` syntax indicates that a variable on
+the device is being declared with a name ``p_name`` that will be accessible simply as
+``p_name`` in the device kernels.
+
+.. code-block::
+
+   void UDF_LoadKernels(nrs_t * nrs)
+   {
+     occa::properties & kernelInfo = *nrs->kernelInfo;
+
+     kernelInfo["defines/p_dp_dx"] = 5.5;
+
+     // other stuff related to loading the kernels
+   }
+
+Then, the kernel would be simplified to the following. You will note that nothing needs
+to be passed through the kernel function arguments - ``p_dp_dx`` is simply available as
+if it were a local variable to the function.
+
+.. code-block:: cpp
+
+   @kernel void myForcingKernel(/* more parameters */)
+   {
+     double foo = 2 * p_dp_dx;
+
+     // do something
+   }
+
+If you grep for ``kernelInfo["defines`` in the nekRS source code, you will see that
+this variable propagation features is also used extensively throughout a normal problem
+setup. For instance, the number of velocity fields to solve for is propagated to the device
+in the ``nrsSetup`` function.
+
+.. code-block:: cpp
+
+   nrs_t* nrsSetup(MPI_Comm comm, occa::device device, setupAide &options, int buildOnly)
+   {
+     // ...
+
+     kernelInfo["defines/p_NVfields"] = nrs->NVfields;
+
+     // ...
+   }
+
+Again, the convention is to precede all such propagated variables with the ``p_`` prefix.
+No list of all such variables propagated automatically within a nekRS simulation is
+maintained, so always check if the information you'd like to propagate is perhaps
+already automatically propagated.
 
 .. _boundary_conditions:
 

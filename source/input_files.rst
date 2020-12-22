@@ -393,6 +393,11 @@ language as well as some knowledge of the nekRS source code internals.
 ``UDF_ExecuteStep(nrs_t* nrs, dfloat time, int tstep)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+This user-defined function is probably the most flexible of the nekRS user-defined
+functions. This function is called once at the start of the simulation just before 
+beginning the time stepping, and then once per time step after running each step.
+
+
 ``UDF_LoadKernels(nrs_t*  nrs)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -407,6 +412,13 @@ and only involves:
 * Declaring all kernels as ``static occa::kernel`` at the top of the ``.udf`` file
 * Loading those kernels in ``UDF_LoadKernels``
 * Defining those kernels in the device user file, ``.oudf``
+
+This function is passed the nekRS simulation object ``nrs`` to provide optional
+access to the ``occa::properties`` object on the ``nrs->kernelInfo`` object. In
+addition to loading kernels, this function can also be used to propagate user-defined
+variables to the kernels. See
+the :ref:`Defining Variables to Access in Device Kernels <defining_variables_for_device>`
+section for a description of this feature.
 
 ``UDF_Setup0(MPI_Comm comm, setupAide & options)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -434,8 +446,8 @@ is called once at the beginning of the simulation *after* initializing the mesh,
 arrays, material property arrays, and boundary field mappings. This function is most
 commonly used to:
 
-1. Apply initial conditions to the solution
-2. Assign function pointers to user-defined source terms and material properties
+* Apply initial conditions to the solution
+* Assign function pointers to user-defined source terms and material properties
 
 Any other additional setup actions that depend on initialization of the solution arrays
 and mesh can of course also be placed in this function.
