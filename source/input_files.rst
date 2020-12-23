@@ -413,7 +413,30 @@ and only involves:
 * Loading those kernels in ``UDF_LoadKernels``
 * Defining those kernels in the device user file, ``.oudf``
 
-This function is passed the nekRS simulation object ``nrs`` to provide optional
+The only kernels in the ``.oudf`` file that don't need to be exlicitly loaded are
+the boundary condition kernels that ship with nekRS. During the ``.oudf`` just-in-time
+compilation, nekRS will search the ``.oudf`` file for any functions that match the
+nekRS boundary condition functions, and automatically create and load a kernel based
+on the function internals set by the user. For instance, in the ``setOUDF`` function
+in the nekRS source code,
+the ``.oudf`` file is scanned for a string matching ``scalarDirichletConditions`` (one
+of the boundary condition functions in Table :ref:`Passive Scalar Boundary Conditions <scalar_bcs>`).
+If this string is found, then the function internals written by the user are cast
+into a generic :term:`OCCA` kernel that is then written into a just-in-time compiled
+:term:`OKL`-language file at ``.cache/udf/udf.okl``.
+
+.. code-block:: cpp
+
+   found = buffer.str().find("void scalarDirichletConditions");
+   if (found == std::string::npos)
+     out << "void scalarDirichletConditions(bcData *bc){}\n";
+   
+   out <<
+     "@kernel void __dummy__(int N) {"
+     "  for (int i = 0; i < N; ++i; @tile(16, @outer, @inner)) {}"
+     "}";
+
+The ``UDF_LoadKernels`` function is passed the nekRS simulation object ``nrs`` to provide optional
 access to the ``occa::properties`` object on the ``nrs->kernelInfo`` object. In
 addition to loading kernels, this function can also be used to propagate user-defined
 variables to the kernels. See
@@ -524,26 +547,58 @@ Specifying Boundary Conditions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The type of condition to apply for each boundary is specified by the ``boundaryTypeMap`` parameter
-in the ``.par`` file. However, this single line only specifies the *type* of boundary condition.
+in the ``.par`` file. A character or longer-form word is used to indicate each boundary condition, where the
+entries in ``boundaryTypeMap`` are listed in increasing boundary ID order.
+However, this single line only specifies the *type* of boundary condition.
 If that boundary condition requires additional information, such as a value to impose for
 a Dirichlet velocity condition, or a flux to impose for a Neumann temperature condition, then
-a device function must be provided in the ``.oudf`` file. The names of these functions, and the
-types of boundary conditions for which they are called, are described as follows.
+a device function must be provided in the ``.oudf`` file. A list of all possible boundary
+conditions is as follows. For boundary conditions that require additional input from the user,
+a device function is also listed. For other boundary conditions that are fully specified simply
+by the type of condition (such as a wall boundary condition for velocity, which sets all
+three components of velocity to zero without additional user input), no device function is
+needed to apply that condition.
 
-=========================================== ============= =======================================
-Function                                    Character Map Purpose
-=========================================== ============= =======================================
-``pressureDirichletConditions(bcData* bc)``               Dirichlet condition for pressure
-``scalarDirichletConditions(bcData* bc)``   ``t``         Dirichlet condition for passive scalars
-``scalarNeumannConditions(bcData* bc)``     ``f``         Neumann condition for passive scalars
-``velocityDirichletConditions(bcData* bc)`` ``v``         Dirichlet condition for velocity
-``velocityNeumannConditions(bcData* bc)``                 Neumann condition for velocity
-=========================================== ============= =======================================
+.. table:: Flow Boundary Conditions
+
+  =========================================== ============================== =============================
+  Function                                    Character Map                  Purpose
+  =========================================== ============================== =============================
+  ``pressureDirichletConditions(bcData* bc)``                                Dirichlet pressure condition
+  ``velocityDirichletConditions(bcData* bc)`` ``v``, ``inlet``               Dirichlet velocity condition
+  ``velocityNeumannConditions(bcData* bc)``                                  Neumann velocity condition
+  N/A                                         ``p``                          Periodic
+  N/A                                         ``w``, ``wall``                No-slip wall for velocity
+  N/A                                         ``o``, ``outlet``, ``outflow`` Zero-gradient velocity
+  N/A                                         ``slipx``                      ?
+  N/A                                         ``slipy``                      ?
+  N/A                                         ``slipz``                      ?
+  N/A                                         ``symx``                       ?
+  N/A                                         ``symy``                       ?
+  N/A                                         ``symz``                       ?
+  =========================================== ============================== =============================
+
+.. _scalar_bcs:
+
+.. table:: Passive Scalar Boundary Conditions
+
+  =========================================== ============================== ===================
+  Function                                    Character Map                  Purpose
+  =========================================== ============================== ===================
+  ``scalarDirichletConditions(bcData* bc)``   ``t``, ``inlet``               Dirichlet condition
+  ``scalarNeumannConditions(bcData* bc)``     ``f``, ``flux``                Neumann condition
+  N/A                                         ``p``                          Periodic
+  N/A                                         ``i``, ``zeroflux``            Zero-gradient
+  N/A                                         ``o``, ``outlet``, ``outflow`` Zero-gradient
+  =========================================== ============================== ===================
 
 Each function has the same signature, and takes as input the ``bc`` object. This object contains
 all information needed to apply a boundary condition - the position, unit normals, and solution
 components. The "character map" refers to the character in the ``boundaryTypeMap`` key in the
-``.par`` file that will trigger this boundary condition. The ``scalar``-type boundary conditions
+``.par`` file that will trigger this boundary condition. The character map can either be a single
+letter, or a more verbose (and equivalent) 
+
+The ``scalar``-type boundary conditions
 are called for boundary conditions on passive scalars, while the ``pressure``- and ``velocity``-type
 conditions are called for the boundary conditions on the flow.
 

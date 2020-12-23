@@ -243,7 +243,11 @@ already automatically propagated.
 Setting Boundary Conditions with Device Kernels
 -----------------------------------------------
 
-Initial conditions 
+Because all nekRS solves are performed on the device, boundary conditions on the
+solution (which may change from time step to time step and be arbitrary functions
+of the solution itself) are also applied on the device. The types of boundary conditions
+on each solution field are specified in the ``.par`` file with the ``boundaryTypeMap``
+key. 
 
 .. _custom_properties:
 

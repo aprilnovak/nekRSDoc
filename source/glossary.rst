@@ -53,6 +53,9 @@ Glossary
     OCCA
       Open Concurrent Compute Abstraction, an API for interacting with various :term:`GPU` backends; see it on `github <https://github.com/libocca/occa>`__.
 
+    OKL
+      OCCA Kernel Language
+
     OpenCL
       A standard maintained by the Khronos Group for programming with :term:`CPUs<CPU>`, :term:`GPUs<GPU>`, :term:`FPGAs<FPGA>`, and other hardware accelerators.
 
