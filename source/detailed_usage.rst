@@ -548,7 +548,7 @@ The final kernel that wraps up this example is the ``heatCapacity`` kernel.
 .. _copy_device_to_host:
 
 Copying From Device to Host
-----------------------------------------
+---------------------------
 
 
 

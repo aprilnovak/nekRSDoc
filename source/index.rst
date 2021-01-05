@@ -28,6 +28,7 @@ Table of Contents
    input_files
    tutorials
    detailed_usage
+   just_in_time_compilation
    glossary
 
 .. Indices and tables

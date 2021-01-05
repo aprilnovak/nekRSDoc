@@ -29,6 +29,9 @@ Glossary
     CPU
       Central Processing Unit
 
+    ENRICO
+      Exascale Nuclear Reactor Investigative COde that couples nekRS to neutronics tools, see it on `github <https://github.com/enrico-dev/enrico>`__.
+
     FPGA
       Field-Programmable Gate Array
 
