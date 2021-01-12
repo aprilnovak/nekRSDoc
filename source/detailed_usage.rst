@@ -550,7 +550,47 @@ The final kernel that wraps up this example is the ``heatCapacity`` kernel.
 Copying From Device to Host
 ---------------------------
 
+All solutions take place on the host, and data transfer of the solution back to the host
+(where it can be accessed for writing output files or other tasks such as postprocessing
+functions in the ``.udf`` file functions) is only performed when nekRS is about to write
+an output file. The writing of output in nekRS is controlled by settings in the ``.par``
+file. For instance, if ``writeControl = numSteps``, and ``writeInterval = 100``, then the solution
+on the device is copied to the host once every 100 time steps to ensure that the
+ensuing output file writing is performed with the most "up-to-date" solution. This is
+important to consider, because attempting to access the solution arrays on the ``nrs``
+struct will be "out-of-date" if they are read at, say, time step 88.
 
+If you would like to access the solution on intervals that do not match the output file
+writing interval, then you need to explicitly copy the device solution back to the host.
+This is done with the ``nek_ocopyFrom(double time, int tstep)`` routine in the
+``nekInterfaceAdapter.cpp`` file. This function copies
+the nekRS solution from the nekRS device arrays to the nekRS host arrays - that is,
+``nrs->o_U`` is copied to ``nrs->U``, and so on. This
+allows you to access the solution on the host as ``nrs->U``, ``nrs->p``, ``nrs->S``, etc.
+
+.. _writing_output:
+
+Writing an Output File
+----------------------
+
+nekRS will automatically write output files according to the ``writeControl`` criterion
+set in the ``.par`` file. However, it may be desirable to have finer-grained control of
+output writing, such as if you want the solution at a specific time step, but that
+time step is not an integer multiple of ``writeInterval``. In this case, you can force
+the output file writing to occur by calling the ``outfld(double time, double outputTime)``
+function in the ``nekrs`` namespace. This function performs the following actions:
+
+1. Copy the nekRS solution from the nekRS device arrays directly to the backend
+   Nek5000 arrays.
+2. Write an output file.
+
+Note that this function is slightly different from the ``nek_ocopyFrom`` function described
+in the :ref:`Copying Device to Host <copy_device_to_host>` section. This function is
+solely intended for writing output, so no effort is expended in copying the device
+solution into the nekRS host arrays - that step is bypassed, and the device solution is
+copied straight into the Nek5000 backend arrays. The ``nek_ocopyFrom`` routine should really
+only be used if you require access to the nekRS solution arrays on the host, while the
+``outfld`` routine should be used strictly for writing output files.
 
 .. rubric:: Footnotes
 

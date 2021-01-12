@@ -161,7 +161,9 @@ of nekRS.
 
 **writeInterval** *<real>*
   Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
-  in units of simulation time for ``writeControl = runTime``.
+  in units of simulation time for ``writeControl = runTime``. If a runtime step control is
+  used that does not perfectly align with the time steps of the simulation, nekRS will write
+  an output file on the timestep that most closely matches the desired write interval.
 
 ``OCCA`` section
 ^^^^^^^^^^^^^^^^
