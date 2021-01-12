@@ -101,6 +101,9 @@ of nekRS.
 ``GENERAL`` section
 ^^^^^^^^^^^^^^^^^^^
 
+This section is used to describe generic settings for the simulation such as time steppers,
+solution order, and file writing control.
+
 **cubaturePolynomialOrder** *<int>*
   Polynomial order for the cubature. If not specified, this defaults to the integer
   closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
@@ -221,7 +224,10 @@ This section is used to define the transport parameters and solver settings for 
 passive scalar. For instance, in a simulation with two passive scalars, you would have
 two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive scalar.
 
-**boundaryTypeMap** *<char[]>*
+**boundaryTypeMap** *<string[]>*
+  Array of strings describing the boundary condition to be applied to each sideset, ordered
+  by sideset ID. The valid characters/strings are shown in Table
+  :ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
 
 **diffusivity** *<double>*
   Although this is named ``diffusivity``, this parameter doublely represents the conductivity
@@ -250,7 +256,8 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 
 **boundaryTypeMap** *<string[]>*
   Array of strings describing the boundary condition to be applied to each sideset, ordered
-  by sideset ID.
+  by sideset ID. The valid characters/strings are shown in Table
+  :ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
 
 **conductivity** *<double>*
   Constant thermal conductivity; if a negative value is provided, the thermal conductivity
@@ -274,9 +281,12 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 ``VELOCITY`` section
 ^^^^^^^^^^^^^^^^^^^^
 
-**boundaryTypeMap** *<char[]>*
+**boundaryTypeMap** *<string[]>*
   Array of strings describing the boundary condition to be applied to each sideset, ordered
-  by sideset ID.
+  by sideset ID. The valid characters/strings are shown in Table
+  :ref:`Flow Boundary Conditions <flow_bcs>`. Note that no boundary conditions need to be
+  specified in the ``PRESSURE`` section, since the form of the pressure conditions are
+  specified in tandem with the velocity conditions with this parameter.
 
 **density** *<double>*
   Constant fluid density. If not specified, this defaults to :math:`1.0`.
@@ -577,6 +587,8 @@ a device function is also listed. For other boundary conditions that are fully s
 by the type of condition (such as a wall boundary condition for velocity, which sets all
 three components of velocity to zero without additional user input), no device function is
 needed to apply that condition.
+
+.. _flow_bcs:
 
 .. table:: Flow Boundary Conditions
 

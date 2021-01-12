@@ -19,6 +19,12 @@ We recommend working through this user guide in the order below. At the very lea
 read :ref:`The nekRS Input Files <input>` page before reading the :ref:`Detailed Code Usage <detailed>`
 page, as some necessary concepts are introduced in this order.
 
+.. note::
+
+   This documentation is a work in progress, and will undergo big changes as more
+   features are added to nekRS. Please open issues to track any missing information
+   at the github repository `here <https://github.com/aprilnovak/nekRSDoc>`__.
+
 Table of Contents
 -----------------
 
