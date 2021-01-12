@@ -96,30 +96,38 @@ of nekRS.
 
 **smootherType**
 
-**strongThreshold** *<real>*
+**strongThreshold** *<double>*
 
 ``GENERAL`` section
 ^^^^^^^^^^^^^^^^^^^
 
-**cubaturePolynomialOrder**
+**cubaturePolynomialOrder** *<int>*
+  Polynomial order for the cubature. If not specified, this defaults to the integer
+  closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
+  order.
+
+.. TODO: need better description of what cubature is
 
 **dealiasing** *<bool>*
 
-**dt** *<real>*
+**dt** *<double>*
   Time step size
 
-**endTime** *<real>*
+**elapsedTime** *<double>*
+  Elapsed time at which to end the simulation, if using ``stopAt = elapsedTime``
+
+**endTime** *<double>*
   Final time at which to end the simulation, if using ``stopAt = endTime``
 
 **extrapolation** *oifs, subcycling*
 
-**filterCutoffRatio** *<real>*
+**filterCutoffRatio** *<double>*
 
 **filtering** *(none), explicit, hpfrtm*
 
 **filterModes** *<int>*
 
-**filterWeight** *<real>*
+**filterWeight** *<double>*
 
 **numSteps** *<int>*
   Number of time steps to perform, if using ``stopAt = numSteps``
@@ -134,32 +142,41 @@ of nekRS.
   interpolation is performed to the current simulation settings. If this is omitted, the
   simulation is assumed to start based on the user-defined initial conditions at time zero.
 
-**stopAt** *(numSteps), endTime*
+**stopAt** *(numSteps), elapsedTime, endTime*
   When to stop the simulation, either based on a number of time steps *numSteps* or a simulated
   end time *endTime*
 
 **subcyclingOrder** *<int>*
 
 **subCyclingSteps** *<int>*
+  Number of subcycling steps, if using either ``extrapolation = oifs`` or ``extrapolation = subcycling``.
+  If ``targetCFL`` is specified, then by default this parameter is set to the integer nearest to
+  half the target :term:`CFL`. Any values less than unity such as through the integer rounding process
+  are adjusted back to a minimum number of steps of unity.
 
-**targetCFL** *<real>*
-  The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``
+.. TODO: better description of what subcycling is
+
+**targetCFL** *<double>*
+  The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``, or
+  when using extrapolation when ``extrapolation`` equals either ``oifs`` or ``subcycling``.
 
 **timeStepper** *bdf1, bdf2, bdf3, tombo1, tombo2, tombo3*
-  If you select any of the :term:`BDF` options, the time integrator is internally set to
+  The method to use for time stepping. Note that
+  if you select any of the :term:`BDF` options, the time integrator is internally set to
   the :term:`TOMBO` time integrator of equivalent order.
 
 **variableDT** *<bool>*
-  Whether to enable a variable time step size; at the moment, nekRS only allows a fixed
+  Whether to enable a variable time step size based on the :term:`CFL<CFL>` condition.
+  At the moment, nekRS only allows a fixed
   time step size, so this parameter is unused.
 
-**verbose**
+**verbose** *<bool>*
 
 **writeControl** *(timeStep), runTime*
   Method to use for the writing of output files, either based on a time step interval with
   *timeStep* or a simulated time interval with *runTime*
 
-**writeInterval** *<real>*
+**writeInterval** *<double>*
   Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
   in units of simulation time for ``writeControl = runTime``. If a runtime step control is
   used that does not perfectly align with the time steps of the simulation, nekRS will write
@@ -191,7 +208,7 @@ of nekRS.
 
 **residualProjectionVectors** *<int>*
 
-**residualTol** *<real>*
+**residualTol** *<double>*
 
 **smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras*
 
@@ -206,8 +223,8 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 
 **boundaryTypeMap** *<char[]>*
 
-**diffusivity** *<real>*
-  Although this is named ``diffusivity``, this parameter really represents the conductivity
+**diffusivity** *<double>*
+  Although this is named ``diffusivity``, this parameter doublely represents the conductivity
   governing diffusion of the passive scalar. In other words, the analogue from the
   ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
   ``conductivity`` parameter. If a negative value is provided, the
@@ -220,10 +237,10 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 
 **residualProjectionVectors** *<int>*
 
-**residualTol** *<real>*
+**residualTol** *<double>*
 
-**rho** *<real>*
-  Although this is name ``rho``, this parameter really represents the coefficient on the
+**rho** *<double>*
+  Although this is name ``rho``, this parameter doublely represents the coefficient on the
   total derivative of the passive scalar. In other words, the analogue from the
   ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
   ``rhoCp`` parameter. If not specified, this defaults to :math:`1.0`.
@@ -235,7 +252,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
   Array of strings describing the boundary condition to be applied to each sideset, ordered
   by sideset ID.
 
-**conductivity** *<real>*
+**conductivity** *<double>*
   Constant thermal conductivity; if a negative value is provided, the thermal conductivity
   is internally set to :math:`1/|k|`, where :math:`k` is the value of the ``conductivity``
   key. If not specified, this defaults to :math:`1.0`.
@@ -246,9 +263,9 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 
 **residualProjectionVectors** *<int>*
 
-**residualTol** *<real>*
+**residualTol** *<double>*
 
-**rhoCp** *<real>*
+**rhoCp** *<double>*
   Constant volumetric isobaric specific heat. If not specified, this defaults to :math:`1.0`.
 
 **solver** *none*
@@ -261,7 +278,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
   Array of strings describing the boundary condition to be applied to each sideset, ordered
   by sideset ID.
 
-**density** *<real>*
+**density** *<double>*
   Constant fluid density. If not specified, this defaults to :math:`1.0`.
 
 **residualProjection** *<bool>*
@@ -270,13 +287,13 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 
 **residualProjectionVectors** *<int>*
 
-**residualTol** *<real>*
+**residualTol** *<double>*
 
 **solver** *none*
   You can turn off the solution of the flow (velocity and pressure) by setting the solver
   to ``none``.
 
-**viscosity** *<real>*
+**viscosity** *<double>*
   Constant dynamic viscosity; if a negative value is provided, the dynamic viscosity is
   internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
   If not specified, this defaults to :math:`1.0`.
