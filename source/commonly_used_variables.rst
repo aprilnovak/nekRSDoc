@@ -25,7 +25,7 @@ arrays that live on the device by convention are prefixed with ``o_``. That is, 
 represents all the :math:`x`-coordinates of the quadrature points, and is stored on the host.
 The same data, but accessible on the device, is ``mesh->o_x``. Not all variables and arrays
 are automatically available on both the host and device, but those that are available are
-indicated with a :math:`\checkmark` in the "Device-Side Version?" table column.
+indicated with a :math:`\checkmark` in the "Device?" table column.
 
 
 Mesh
@@ -46,7 +46,7 @@ Some notable points of interest that require additional comment:
 
 * The :term:`MPI<MPI>` communicator is stored on the mesh, since domain decomposition
   is used to divide the mesh among processes. *Most* information stored on the ``mesh`` object
-  strictly refers to the portion of the mesh owned by the current process. For instance,
+  strictly refers to the portion of the mesh "owned" by the current process. For instance,
   ``mesh->Nelements`` only refers to the number of elements "owned" by the current process
   (``mesh->rank``), not the total number of elements in the simulation mesh. Any exceptions
   to this process-local information is noted as applicable.
@@ -72,4 +72,43 @@ Variable Name      Size                         Device?            Meaning
 ``y``              ``Nelements * Np``           :math:`\checkmark` :math:`y`-coordinates of quadrature points
 ``z``              ``Nelements * Np``           :math:`\checkmark` :math:`z`-coordinates of quadrature points
 ================== ============================ ================== =================================================
+
+Solution Fields and Simulation Settings
+---------------------------------------
+
+This section describes the members on the ``nrs`` object, which consist of user settings as well as the 
+solution. Some of this information is simply assigned a value also stored on the ``nrs->mesh`` object.
+Some notable points that require additional comment:
+
+* Like the mesh object, the solution fields are stored only on a per-rank basis. That is, ``nrs->U`` only
+  contains the velocity solution for the elements "owned" by the current process.
+* Solution arrays with more than one component (such as velocity, in ``nrs->U``) are indexed according
+  to a ``fieldOffset``. This offset is chosen to be larger than the *actual* length of the velocity
+  solution (which is the total number of quadrature points on that rank, or ``nrs->Nlocal``) due to
+  performance reasons. That is, you should use the ``fieldOffset`` to index between components, but
+  within a single component, you should not attempt to access entries with indices between
+  ``i * (fieldOffset - Nlocal)``, where ``i`` is the component number, because those values are not actually
+  used to store the solution (they are the end of a storage buffer).
+
+================== ============================ ================== ===========================================================================
+Variable Name      Size                         Device?            Meaning
+================== ============================ ================== ===========================================================================
+``cds``            1                                               convection-diffusion solution object
+``cht``            1                                               whether the problem contains conjugate heat transfer
+``dim``            1                                               spatial dimension of ``nrs->mesh``
+``dt``             3                                               time step for previous 3 time steps
+``fieldOffset``    1                                               offset in flow solution arrays to access new component
+``isOutputStep``   1                                               if an output file is written on this time step
+``lastStep``       1                                               if this time step is the last time step of the run
+``mesh``           1                                               mesh used for the flow simulation
+``NiterU``         1                                               number of iterations taken in last velocity solve
+``NiterP``         1                                               number of iterations taken in last pressure solve
+``Nlocal``         1                                               number of quadrature points local to this process
+``Nscalar``        1                                               number of passive scalars to solve for
+``NTfields``       1                                               number of flow-related fields to solve for (:math:`\vec{V}` plus :math:`T`)
+``NVfields``       1                                               number of velocity fields to solve for
+``options``        1                                               object containing user settings from ``.par`` file
+``P``              ``fieldOffset``              :math:`\checkmark` pressure solution for most recent time step
+``U``              ``NVfields * fieldOffset``   :math:`\checkmark` velocity solution for all components for most recent time step
+================== ============================ ================== ===========================================================================
 
