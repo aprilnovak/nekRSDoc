@@ -41,6 +41,9 @@ Glossary
     GPU
       Graphics Processing Unit
 
+    GUI
+      Graphical User Interface
+
     HIP
       :term:`AMD`'s :term:`API` for programming with :term:`GPUs<GPU>`
 

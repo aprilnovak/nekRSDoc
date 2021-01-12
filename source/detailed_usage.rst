@@ -8,7 +8,10 @@ for setting boundary conditions, converting between mesh formats, defining and
 running device kernels, writing output files, and much more. Please first consult
 the :ref:`Input File Syntax <input>` page for an overview of the purpose of each
 nekRS input file to provide context on where the following instructions fit into
-the overall code structure.
+the overall code structure. Throughout this section, variables and data structures
+in the nekRS source code are referenced - a list defining these variables and structures
+is available on the :ref:`Commonly Used Variables <commonly_user_variables>` page
+for reference.
 
 .. _scripts:
 

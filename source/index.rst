@@ -26,6 +26,7 @@ Table of Contents
    :maxdepth: 2
 
    input_files
+   commonly_used_variables
    tutorials
    detailed_usage
    just_in_time_compilation
