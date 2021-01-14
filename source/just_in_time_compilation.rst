@@ -35,9 +35,8 @@ cached state of the case, simply delete the ``.cache`` directory:
 
 The precompilation process usually takes on the order of one minute. Depending on
 the use case, it may be advantageous to force the precompilation separately from the run itself.
-To precompile the case, use the ``nrspre`` script that ships with the :term:`Nek5000`
-dependency. First refer to the :ref:`Building the Nek5000 Tool Scripts <scripts>` section
-for how to compile and access this script.
+To precompile the case, use the ``nrspre`` script. See the
+:ref:`Scripts That Ship with nekRS <nekrs_scripts>` section for where to find this script.
 
 As an example, to precompile a case with name ``my_case`` and do a dry run
 with 4 processes, the ``nrspre`` script would be used as follows. After the precompilation,

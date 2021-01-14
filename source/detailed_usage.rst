@@ -31,6 +31,34 @@ and run the makefile to compile all the scripts.
 This should create binary executables in the ``build/_deps/nek5000_content-src/tools/bin``
 directory. You may want to add this to your path in order to quickly access those scripts.
 
+.. _nekrs_scripts:
+
+Scripts That Ship with nekRS
+----------------------------
+
+In addition to the scripts that ship with Nek5000 described in
+:ref:`Building the Nek5000 Tool Scripts <scripts>`, a number of scripts ship with nekRS itself.
+These scripts are located in the ``$NEKRS_HOME/bin`` directory, where ``NEKRS_HOME`` is an
+environment variable set as part of the build process. A brief summary of these scripts and
+their usage is as follows.
+
+* ``nrsmpi <casename> <processes>``: run nekRS in parallel with ``<processes>`` parallel
+  processes for the case files that are prefixed with ``casename``.
+* ``nrsbmpi <casename> <processes>``: same as ``nrsmpi``, except that nekRS runs
+  in the background
+* ``nrspre <casename> <processes>``: precompile nekRS case (see
+  :ref:`Just-in-time Compilation <just_in_time_compilation>`)
+* ``nrsqsub_lassen <casename> <nodes> <wall time>``: submission script for
+  `<Lassen https://computing.llnl.gov/computers/lassen>`__, a supercomputer
+  at Lawrence Livermore National Laboratory. A number of other settings are specified
+  within the script itself.
+* ``nrsqsub_summit <casename> <nodes> <wall time>``: submission script for
+  `<Summit https://www.olcf.ornl.gov/summit/>`__, a supercomputer
+  at Oak Ridge National Laboratory. A number of other settings are specified within the
+  script itself.
+* ``nrsvis <casename>``: postprocess ``fld``-type nekRS output files into a form
+  readable by Paraview or Visit.
+
 .. _converting_mesh:
 
 Converting a Mesh to .re2 Format
