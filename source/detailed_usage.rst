@@ -10,7 +10,7 @@ the :ref:`Input File Syntax <input>` page for an overview of the purpose of each
 nekRS input file to provide context on where the following instructions fit into
 the overall code structure. Throughout this section, variables and data structures
 in the nekRS source code are referenced - a list defining these variables and structures
-is available on the :ref:`Commonly Used Variables <commonly_user_variables>` page
+is available on the :ref:`Commonly Used Variables <commonly_used_variables>` page
 for reference.
 
 .. _scripts:
@@ -155,6 +155,49 @@ array.
 
 Grabbing User .par Settings
 ---------------------------
+
+nekRS conveniently allows the user to define their own parameters in the ``.par`` file
+that can then be accessed in the ``.udf`` functions. This is useful for programmatically
+setting boundary conditions, forcing terms, and many other simulation settings. For instance,
+suppose that the inlet velocity will vary from run to run and is possibly used in several
+places in the ``.udf`` functions. Rather than continually edit the ``.udf`` file (which
+will require repeated just-in-time compilation), these settings can be set with user-defined
+parameters in the ``.par`` file.
+
+As an example, we will define a parameter named ``inletVelocity`` in the ``VELOCITY`` block.
+
+.. code-block :: xml
+
+   [VELOCITY]
+     residualTol = 1e-6
+     density = 1.5
+     viscosity = 2.4e-4
+     boundaryTypeMap = inlet, wall, wall, wall, wall, outlet
+     inletVelocity = 1.5
+
+To access this value in the ``.udf`` functions, call the ``extract(String key, String value, T & destination)``
+function on ``nrs->par`` as follows.
+
+.. code-block :: cpp
+
+   void UDF_Setup(nrs_t* nrs)
+   {
+     double inlet_Vz;
+     nrs->par->extract("velocity", "inletVelocity", inlet_Vz);
+
+     mesh_t* mesh = nrs->mesh;
+     int num_quadrature_points = mesh->Np * mesh->Nelements;
+
+     for (int n = 0; n < num_quadrature_points; n++) {
+       nrs->U[n + 0 * nrs->fieldOffset] = 0;
+       nrs->U[n + 1 * nrs->fieldOffset] = 0;
+       nrs->U[n + 2 * nrs->fieldOffset] = inlet_Vz;
+     }
+   }
+
+The extracted user parameter can then be used throughout the ``.udf`` functions, as well
+as propagated to the device kernels as described in Section
+:ref:`Defining Variables to Access in Device Kernels <defining_variables_for_device>`.
 
 .. _defining_variables_for_device:
 

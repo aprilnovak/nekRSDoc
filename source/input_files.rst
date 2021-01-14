@@ -212,6 +212,7 @@ solution order, and file writing control.
 **residualProjectionVectors** *<int>*
 
 **residualTol** *<double>*
+  Absolute residual tolerance for the pressure solution
 
 **smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras*
 
@@ -244,6 +245,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **residualProjectionVectors** *<int>*
 
 **residualTol** *<double>*
+  Absolute residual tolerance for the passive scalar solution
 
 **rho** *<double>*
   Although this is name ``rho``, this parameter doublely represents the coefficient on the
@@ -271,6 +273,7 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **residualProjectionVectors** *<int>*
 
 **residualTol** *<double>*
+  Absolute residual tolerance for the temperature solution
 
 **rhoCp** *<double>*
   Constant volumetric isobaric specific heat. If not specified, this defaults to :math:`1.0`.
