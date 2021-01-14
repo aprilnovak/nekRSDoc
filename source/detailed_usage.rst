@@ -159,12 +159,12 @@ Grabbing User .par Settings
 nekRS conveniently allows the user to define their own parameters in the ``.par`` file
 that can then be accessed in the ``.udf`` functions. This is useful for programmatically
 setting boundary conditions, forcing terms, and many other simulation settings. For instance,
-suppose that the inlet velocity will vary from run to run and is possibly used in several
+suppose that the initial condition for velocity will vary from run to run and is possibly used in several
 places in the ``.udf`` functions. Rather than continually edit the ``.udf`` file (which
 will require repeated just-in-time compilation), these settings can be set with user-defined
 parameters in the ``.par`` file.
 
-As an example, we will define a parameter named ``inletVelocity`` in the ``VELOCITY`` block.
+As an example, we will define a parameter named ``initialVelocity`` in the ``VELOCITY`` block.
 
 .. code-block :: xml
 
@@ -173,7 +173,7 @@ As an example, we will define a parameter named ``inletVelocity`` in the ``VELOC
      density = 1.5
      viscosity = 2.4e-4
      boundaryTypeMap = inlet, wall, wall, wall, wall, outlet
-     inletVelocity = 1.5
+     initialVelocity = 1.5
 
 To access this value in the ``.udf`` functions, call the ``extract(String key, String value, T & destination)``
 function on ``nrs->par`` as follows.
@@ -182,8 +182,8 @@ function on ``nrs->par`` as follows.
 
    void UDF_Setup(nrs_t* nrs)
    {
-     double inlet_Vz;
-     nrs->par->extract("velocity", "inletVelocity", inlet_Vz);
+     double initial_Vz;
+     nrs->par->extract("velocity", "initialvelocity", initial_Vz);
 
      mesh_t* mesh = nrs->mesh;
      int num_quadrature_points = mesh->Np * mesh->Nelements;
@@ -191,7 +191,7 @@ function on ``nrs->par`` as follows.
      for (int n = 0; n < num_quadrature_points; n++) {
        nrs->U[n + 0 * nrs->fieldOffset] = 0;
        nrs->U[n + 1 * nrs->fieldOffset] = 0;
-       nrs->U[n + 2 * nrs->fieldOffset] = inlet_Vz;
+       nrs->U[n + 2 * nrs->fieldOffset] = initial_Vz;
      }
    }
 
