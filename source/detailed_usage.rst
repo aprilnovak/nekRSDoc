@@ -625,18 +625,9 @@ Copying From Device to Host
 ---------------------------
 
 All solutions take place on the host, and data transfer of the solution back to the host
-(where it can be accessed for writing output files or other tasks such as postprocessing
-functions in the ``.udf`` file functions) is only performed when nekRS is about to write
-an output file. The writing of output in nekRS is controlled by settings in the ``.par``
-file. For instance, if ``writeControl = numSteps``, and ``writeInterval = 100``, then the solution
-on the device is copied to the host once every 100 time steps to ensure that the
-ensuing output file writing is performed with the most "up-to-date" solution. This is
-important to consider, because attempting to access the solution arrays on the ``nrs``
-struct will be "out-of-date" if they are read at, say, time step 88.
-
-If you would like to access the solution on intervals that do not match the output file
-writing interval, then you need to explicitly copy the device solution back to the host.
-This is done with the ``nek_ocopyFrom(double time, int tstep)`` routine in the
+must be manually performed by the user if you would like to access ``nrs->U``, ``nrs->p``,
+``nrs->cds->S``, or other solution objects, in host-side functions. To copy the solution
+from the device to the host, use the ``nek_ocopyFrom(double time, int tstep)`` routine in the
 ``nekInterfaceAdapter.cpp`` file. This function copies
 the nekRS solution from the nekRS device arrays to the nekRS host arrays - that is,
 ``nrs->o_U`` is copied to ``nrs->U``, and so on. This
