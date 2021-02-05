@@ -672,8 +672,7 @@ However, you may have problem-specific fields that you want to view, such as :ma
 nekRS uses a rather archaic method for writing out additional fields, because the same
 functions that are used to write the velocity, pressure, and temperature are simply re-used
 to write other fields. This imposes limitations on both the dimensionality of fields that
-can be output, as well as how they are named in the output files.
-
+can be output, as well as how they are named in the output files. 
 For example, suppose you would like to write three fields to a file:
   * ``o_yPlus``, a device array that holds :math:`y^+` values, and
   * ``o_Uavg``, a device array that holds a time-averaged velocity field, and
@@ -681,7 +680,7 @@ For example, suppose you would like to write three fields to a file:
 
 To write these three fields to an output file, use the ``writeFld`` function as follows.
 The ``writeFld`` function takes eight arguments, and has a signature
-``void writeFld(const char * suffix, dfloat t, int coords, int FP64, void* o_u, void* o_p, void* o_s, int NSfields)``.
+``void writeFld(const char* suf, dfloat t, int coords, int FP64, void* o_u, void* o_p, void* o_s, int NSf)``.
 In this example, the first parameter, ``"usr"``, is a three-character
 prefix that will determine how the new output file is written. While the velocity, pressure,
 and temperatures are written to files named ``case0.f<time_step>``, where ``case`` is the case
