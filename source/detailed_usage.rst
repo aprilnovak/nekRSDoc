@@ -633,6 +633,7 @@ from the device to the host, use the ``nek_ocopyFrom(double time, int tstep)`` r
 1. Copy the nekRS solution from the nekRS device arrays to the nekRS host arrays - that is,
 ``nrs->o_U`` is copied to ``nrs->U``, and so on. This
 allows you to access the solution on the host as ``nrs->U``, ``nrs->p``, ``nrs->S``, etc.
+
 2. Copy the nekRS solution from the nekRS host arrays to the Nek5000 backend arrays.
 
 If you only want to access the nekRS host side arays such as ``nrs->U``, you can skip the
