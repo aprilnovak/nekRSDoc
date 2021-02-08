@@ -669,9 +669,9 @@ only be used if you require access to the nekRS solution arrays on the host, whi
 
 By default, nekRS will only write the velocity, pressure, and temperature to an output file.
 However, you may have problem-specific fields that you want to view, such as :math:`y^+`.
-nekRS uses a rather archaic method for writing out additional fields, because the same
-functions that are used to write the velocity, pressure, and temperature are simply re-used
-to write other fields. This imposes limitations on both the dimensionality of fields that
+To write other fields to files, nekRS re-uses the
+functions that are used to write the velocity, pressure, and temperature
+to write other fields. Note that this imposes limitations on both the dimensionality of fields that
 can be output, as well as how they are named in the output files. 
 For example, suppose you would like to write three fields to a file:
   * ``o_yPlus``, a device array that holds :math:`y^+` values, and
@@ -719,7 +719,7 @@ contain the following:
 * ``o_rst`` is written to a field named ``pressure``
 * ``o_yPlus`` is written to a field named ``temperature``
 
-nekRS's rigid output system requires additional maneuvering if you wish to output
+nekRS's output system requires additional maneuvering if you wish to output
 more than one of each of each of these three categories of fields. For instance, suppose
 you want to output three different fields, ``o_field1``, ``o_field2``, and ``o_field3``,
 each of size ``nrs->fieldOffset``. Because only one input argument to ``writeFld`` can have
