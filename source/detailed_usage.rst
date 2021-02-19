@@ -645,7 +645,7 @@ the non-dimensionalized version of these properties in the ``.par`` file. To be 
 for the momentum and energy conservation equations, the input parameters should be specified as:
 
   * ``rho``:math:`\rightarrow` :math:`\rho^\dagger\equiv\frac{\rho}{\rho_0}`
-  * ``viscosity``:math:`\rightarrow` :math:`\frac{1}{Re}\equiv\frac{\mu_0}{\rho_0UL}`
+  * ``viscosity``:math:`\rightarrow` :math:`\frac{1}{Re}\mu^\dagger\equiv\frac{\mu_0}{\rho_0UL}\frac{\mu}{\mu_0}`
   * ``rhoCp``:math:`\rightarrow` :math:`\rho^\dagger C_p^\dagger\equiv\frac{\rho}{\rho_0}\frac{C_p}{C_{p,0}}`
   * ``conductivity``:math:`\rightarrow` :math:`\frac{1}{Pe}\equiv\frac{k_0}{\rho_0C_{p,0}UL}`
 
