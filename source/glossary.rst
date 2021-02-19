@@ -68,6 +68,9 @@ Glossary
     PSU
       Pennsylvania State University
 
+    RANS
+      Reynolds-Averaged Navier-Stokes
+
     UIUC
       The University of Illinois at Urbana-Champaign
 

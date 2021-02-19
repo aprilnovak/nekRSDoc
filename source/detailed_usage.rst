@@ -619,6 +619,11 @@ more complex ``viscosity`` kernel. Here, we need to pass in the scalar :math:`\p
 
 The final kernel that wraps up this example is the ``heatCapacity`` kernel.
 
+.. _nondimensional:
+
+Solving in Non-Dimensional Form
+-------------------------------
+
 .. _copy_device_to_host:
 
 Copying From Device to Host
@@ -673,8 +678,9 @@ However, you may have problem-specific fields that you want to view, such as :ma
 To write other fields to files, nekRS re-uses the
 functions that are used to write the velocity, pressure, and temperature
 to write other fields. Note that this imposes limitations on both the dimensionality of fields that
-can be output, as well as how they are named in the output files. 
+can be output, as well as how they are named in the output files.
 For example, suppose you would like to write three fields to a file:
+
   * ``o_yPlus``, a device array that holds :math:`y^+` values, and
   * ``o_Uavg``, a device array that holds a time-averaged velocity field, and
   * ``o_rst``, a device array that holds the one component of the Reynolds stress tensor.

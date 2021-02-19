@@ -58,6 +58,7 @@ The valid sections for setting up a nekRS simulation are
 * ``GENERAL``: generic settings for the simulation
 * ``OCCA``: backend device settings
 * ``PRESSURE``: settings for the pressure solution
+* ``PROBLEMTYPE``: settings for the governing equations
 * ``SCALARXX``: settings for the ``XX``-th scalar
 * ``TEMPERATURE``: settings for the temperature solution
 * ``VELOCITY``: settings for the velocity solution
@@ -217,6 +218,26 @@ solution order, and file writing control.
 **smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras*
 
 **upwardSmoother** *ASM, JACOBI, RAS*
+
+``PROBLEMTYPE`` section
+^^^^^^^^^^^^^^^^^^^^^^^
+
+This section is used to control the form of the governing equations used in nekRS.
+While individual equations can be turned on/off in the ``VELOCITY``, ``TEMPERATURE``,
+and ``SCALARXX`` sections, this block is used for higher-level control of the forms
+of those equations themselves.
+
+**equation** *stokes*
+  Whether to omit the advection term in the conservation of momentum equation, therefore
+  solving for the Stokes equations.
+
+**stressFormulation** *(false), true*
+  Whether the viscosity (molecular plus turbulent) is not constant, therefore requiring
+  use of the full form of the viscous stress tensor :math:`\tau`. By setting ``stressFormulation = false``,
+  :math:`\nabla\cdot\tau` is represented as :math:`\nabla\cdot\tau=\mu\nabla^2\mathbf u`.
+  Even if the molecular viscosity is constant, this parameter must be set to ``true``
+  when using a :term:`RANS` model because the turbulent viscosity portion of the overall
+  viscosity is not constant.
 
 ``SCALARXX`` section
 ^^^^^^^^^^^^^^^^^^^^
