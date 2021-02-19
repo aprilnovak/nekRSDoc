@@ -647,7 +647,7 @@ for the momentum and energy conservation equations, the input parameters should 
   * ``rho``:math:`\rightarrow` :math:`\rho^\dagger\equiv\frac{\rho}{\rho_0}`
   * ``viscosity``:math:`\rightarrow` :math:`\frac{1}{Re}\mu^\dagger\equiv\frac{\mu_0}{\rho_0UL}\frac{\mu}{\mu_0}`
   * ``rhoCp``:math:`\rightarrow` :math:`\rho^\dagger C_p^\dagger\equiv\frac{\rho}{\rho_0}\frac{C_p}{C_{p,0}}`
-  * ``conductivity``:math:`\rightarrow` :math:`\frac{1}{Pe}\equiv\frac{k_0}{\rho_0C_{p,0}UL}`
+  * ``conductivity``:math:`\rightarrow` :math:`\frac{1}{Pe}k^\dagger\equiv\frac{k_0}{\rho_0C_{p,0}UL}\frac{k}{k_0}`
 
 If a volumetric heat source is present, it must also be specified in non-dimensional form
 as
@@ -655,6 +655,10 @@ as
 .. math::
 
   \dot{q}^\dagger=\frac{\dot{q}}{\rho_0C_{p,0}U\Delta T/L}
+
+If the Prandtl number is unity, then because :math:`Pe\equiv Re\ Pr`, the coefficient on the
+diffusion kernel in both the momentum and energy conservation equations will be the same
+(for the case of constant properties).
 
 .. note::
 
