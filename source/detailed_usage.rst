@@ -624,6 +624,57 @@ The final kernel that wraps up this example is the ``heatCapacity`` kernel.
 Solving in Non-Dimensional Form
 -------------------------------
 
+nekRS can solve its governing equations in either dimensional or non-dimensional form
+with careful attention to the specification of the material properties. To solve in
+*dimensional* form, the ``density``, ``viscosity``, ``rhoCp``, ``conductivity``, and
+``diffusivity`` parameters in the ``.par`` file simply take dimensional forms. Solving
+in *non-dimensional* form requires only small changes from the dimensional approach.
+For the case of constant properties, the transformation to non-dimensional form is
+trivial, but slightly more care is required to solve in non-dimensional form with
+variable properties. These two approaches are described next with reference to
+the incompressible Navier-Stokes model described in :ref:`Incompressible Flow Model <ins_model>`.
+
+.. _constant_p:
+
+Constant Properties
+"""""""""""""""""""
+
+For the case of constant properties for :math:`\rho`, :math:`\mu`, :math:`C_p`,
+and :math:`k`, solution in non-dimensional form is achieved by simply specifying
+the non-dimensionalized version of these properties in the ``.par`` file. To be explicit,
+for the momentum and energy conservation equations, the input parameters should be specified as:
+
+  * ``rho``:math:`\rightarrow` :math:`\rho^\dagger\equiv\frac{\rho}{\rho_0}`
+  * ``viscosity``:math:`\rightarrow` :math:`\frac{1}{Re}\equiv\frac{\mu_0}{\rho_0UL}`
+  * ``rhoCp``:math:`\rightarrow` :math:`\rho^\dagger C_p^\dagger\equiv\frac{\rho}{\rho_0}\frac{C_p}{C_{p,0}}`
+  * ``conductivity``:math:`\rightarrow` :math:`\frac{1}{Pe}\equiv\frac{k_0}{\rho_0C_{p,0}UL}`
+
+If a volumetric heat source is present, it must also be specified in non-dimensional form
+as
+
+.. math::
+
+  \dot{q}^\dagger=\frac{\dot{q}}{\rho_0C_{p,0}U\Delta T/L}
+
+.. note::
+
+  Several of the nekRS input files use syntax inherited from Nek5000 that allows shorthand
+  expressions that are often convenient for the Reynolds and Peclet numbers, which appear
+  as inverses in the non-dimensional equations. Specifying ``conductivity = -1000`` is
+  shorthand for ``conductivity = 1/1000``.
+
+Variable Properties
+"""""""""""""""""""
+
+For the case of variable properties, the procedure is similar to the case for constant
+properties, except that the properties must be specified in the ``.oudf`` kernels.
+It is best practice to simply omit the ``rho``, ``viscosity``, ``rhoCp``, and
+``conductivity`` fields from the ``.par`` file entirely. Then, in the ``.oudf`` kernels,
+you must include kernels that apply the variable properties in the same manner as in
+:ref:`Constant Properties <constant_p>`. See
+:ref:`Setting Custom Properties <custom_properties>` for more
+information on the kernel setup.
+
 .. _copy_device_to_host:
 
 Copying From Device to Host

@@ -8,6 +8,8 @@ at a high level. nekRS includes models for incompressible flow, a partially
 compressible low-Mach formulation, the Stokes equations, and the :math:`k`-:math:`\tau`
 :term:`RANS` equations.
 
+.. _ins_model:
+
 Incompressible Flow Model
 -------------------------
 
@@ -43,6 +45,8 @@ the viscous stress tensor is given by the Navier-Stokes closure as
 .. math::
 
   \nabla\cdot\tau=\nabla\cdot\left\lbrack\mu\left(\nabla\mathbf u+\nabla\mathbf u^T\right)\right\rbrack
+
+.. _nondimensional_eqs:
 
 Non-Dimensional Formulation
 """""""""""""""""""""""""""
