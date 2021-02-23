@@ -34,6 +34,7 @@ Table of Contents
    theory
    input_files
    commonly_used_variables
+   compiling
    tutorials
    detailed_usage
    just_in_time_compilation
