@@ -37,6 +37,7 @@ Table of Contents
    tutorials
    detailed_usage
    just_in_time_compilation
+   doxygen
    glossary
 
 .. Indices and tables
