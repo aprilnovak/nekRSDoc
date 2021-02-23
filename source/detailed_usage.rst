@@ -656,6 +656,28 @@ as
 
   \dot{q}^\dagger=\frac{\dot{q}}{\rho_0C_{p,0}U\Delta T/L}
 
+If a source term is present in the momentum conservation equation, that source term
+must also be specified in non-dimensional form as
+
+.. math::
+
+   \mathbf s^\dagger=\frac{\mathbf s}{\rho_0U^2/L}
+
+where :math:`\mathbf s` is the source term in the dimensional equation, with dimensions
+of mass / square length / square time.
+
+In addition, all boundary conditions must also be non-dimensionalized appropriately.
+Some of the more common boundary conditions and their non-dimensionalizations are:
+
+  * fixed velocity: :math:`u_i^\dagger=\frac{u_i}{U}`, i.e. divide all dimensional
+    velocity boundary values by :math:`U`
+  * fixed temperature: :math:`T^\dagger=\frac{T-T_0}{\Delta T}`, i.e. from all dimensional temperature
+    boundary values, first subtract :math:`T_0` and then divide by :math:`\Delta T`
+  * fixed pressure: :math:`P^\dagger=\frac{P}{\rho_0U^2}`, i.e. divide all dimensional
+    pressure boundary values by :math:`\rho_0U^2`
+  * heat flux: :math:`q^\dagger=\frac{q}{\rho_0C_{p,0}U\Delta T}`, i.e. divide all
+    dimensional heat flux boundary values by :math:`\rho_0C_{p,0}U\Delta T`
+
 If the Prandtl number is unity, then because :math:`Pe\equiv Re\ Pr`, the coefficient on the
 diffusion kernel in both the momentum and energy conservation equations will be the same
 (for the case of constant properties).
