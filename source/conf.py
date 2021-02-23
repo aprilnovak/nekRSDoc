@@ -20,6 +20,10 @@
 # import sys
 # sys.path.insert(0, os.path.abspath('.'))
 
+from os import makedirs, path
+import subprocess
+import re
+import shutil
 
 # -- General configuration ------------------------------------------------
 
@@ -172,3 +176,48 @@ epub_copyright = copyright
 
 # A list of files that should not be packed into the epub file.
 epub_exclude_files = ['search.html']
+
+# -- Build Doxygen ---------------------------------------------------
+
+def clone_nekrs(app):
+    nekrs_srcdir = path.abspath(path.join(app.outdir, 'nekRS'))
+    if not path.exists(nekrs_srcdir):
+        #subprocess.run(['git', 'clone', 'https://github.com/Nek5000/nekRS.git', nekrs_srcdir], universal_newlines=True, check=True)
+        subprocess.run(['git', 'clone', 'https://github.com/Nek5000/nekRS.git', nekrs_srcdir], check=True)
+    else:
+        #subprocess.run(['git', 'pull'], cwd=nekrs_srcdir, universal_newlines=True, check=True)
+        subprocess.run(['git', 'pull'], cwd=nekrs_srcdir, check=True)
+    shutil.copy(path.join(app.srcdir, 'Doxyfile'), nekrs_srcdir)
+
+def build_doxygen(app):
+
+    # XML goes in Sphinx source dir, and HTML goes in Sphinx output dir
+
+    doxygen_xmldir = path.abspath(path.join(app.srcdir, 'doxygen', 'xml'))
+    doxygen_htmldir = path.abspath(path.join(app.outdir, 'doxygen', 'html'))
+
+    # Doxygen won't create *nested* output dirs, so we do it ourselves.
+
+    for d in (doxygen_xmldir, doxygen_htmldir):
+        makedirs(d, exist_ok=True)
+
+    # Need to know location of Doxyfile, so we'll assume its location relative to Sphinx srcdir
+    doxyfile_dir = path.join(app.outdir, 'nekRS')
+
+    # To pass output dirs to Doxygen, we follow this advice:
+    # http://www.doxygen.nl/manual/faq.html#faq_cmdline
+    # Here we read the Doxyfile into a string, replace the *_OUTPUT vars, and pass the string as
+    # stdin to the doxygen subprocess
+
+    with open(path.join(doxyfile_dir, 'Doxyfile')) as f:
+        doxy_opts = f.read()
+    doxy_opts = re.sub(r'(\bHTML_OUTPUT\b\s*=\s*).*', r'\1"{}"'.format(doxygen_htmldir),
+                       doxy_opts)
+    doxy_opts = re.sub(r'(\bXML_OUTPUT\b\s*=\s*).*', r'\1"{}"'.format(doxygen_xmldir), doxy_opts)
+
+    subprocess.run(['doxygen', '-'], cwd=doxyfile_dir, input=doxy_opts, universal_newlines=True,
+                   check=True)
+
+def setup(app):
+    app.connect("builder-inited", clone_nekrs)
+    app.connect("builder-inited", build_doxygen)
