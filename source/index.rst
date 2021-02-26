@@ -37,6 +37,7 @@ Table of Contents
    compiling
    tutorials
    detailed_usage
+   plugins
    just_in_time_compilation
    doxygen
    glossary

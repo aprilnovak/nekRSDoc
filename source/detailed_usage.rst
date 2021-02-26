@@ -323,10 +323,15 @@ of the solution itself) are also applied on the device. The types of boundary co
 on each solution field are specified in the ``.par`` file with the ``boundaryTypeMap``
 key. 
 
+.. _custom_sources:
+
+Setting Custom Source Terms
+---------------------------
+
 .. _custom_properties:
 
-Setting Custom Properties with ``UDF_Setup``
---------------------------------------------
+Setting Custom Properties
+-------------------------
 
 Custom material properties can be set for the flow and passive scalar equations
 by assigning the ``udf.properties`` function pointer to a function with a signature

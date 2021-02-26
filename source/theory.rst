@@ -370,6 +370,69 @@ implemented in the form
 in order to reduce the discretization error associated with the computation
 of gradients of a term that scales as :math:`y^2` as :math:`y\rightarrow 0` :footcite:`kok`.
 
+The Eddy Viscosity
+""""""""""""""""""
+
+The objective of :term:`RANS` models is to estimate the eddy viscosity :math:`\mu_T`
+that appears in the Boussinesq approximation. The particular form for :math:`\mu_T`
+can be understood here in terms of the standard :math:`k`-:math:`\epsilon`
+model, for which :math:`\mu_T` is given as :footcite:`launder`
+
+
+.. math::
+
+  \mu_T=C_\mu\rho\frac{k^2}{\epsilon}
+
+where :math:`C_\mu` is a constant. Inserting :math:`\tau\equiv 1/\omega` and
+:math:`\epsilon=\beta^*\omega k` gives :footcite:`kok`
+
+.. math::
+
+  \mu_T=\rho k\tau
+
+which presumes that :math:`C_\mu` and :math:`\beta^*` are really the same constant,
+but with different notation developed separately by the :math:`k`-:math:`\epsilon`
+researchers and the :math:`k`-:math:`\tau` researchers.
+
+..
+  TODO: is this the correct explanation for why there's no coefficient in the mu_t equation?
+
+.. _rans_details:
+
+Closure Coefficients and Other Details
+""""""""""""""""""""""""""""""""""""""
+
+Table :ref:`RANS Coefficients <rans_coeffs>` shows the values for the various
+constants used in nekRS's :math:`k`-:math:`\tau` model.
+
+.. _rans_coeffs:
+
+.. table:: RANS Coefficients
+
+  ==================== =================== ======
+  Coefficient          Value               Source
+  ==================== =================== ======
+  :math:`\sigma_k`     :math:`\frac{5}{3}`
+  :math:`\sigma_\tau`  :math:`2.0`
+  ==================== =================== ======
+
+A limiter is applied to both :math:`k` and :math:`\tau` to prevent negative values
+of either :math:`k` or :math:`tau`,
+
+.. math::
+
+  k = \max{\left(k, 0.01|k|\right)}
+
+.. math::
+
+  \tau = \max{\left(\tau, 0.01|\tau|\right)}
+
+.. warning::
+
+  nekRS's :math:`k`-:math:`\tau` implementation currently requires that
+  the laminar dynamic viscosity and the density are constant, because the setup
+  routines can only accept constant values. See :ref:`RANS Plugin <rans_plugin>`
+  for more information.
 
 .. note::
 

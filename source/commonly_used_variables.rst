@@ -73,10 +73,12 @@ Variable Name      Size                         Device?            Meaning
 ``z``              ``Nelements * Np``           :math:`\checkmark` :math:`z`-coordinates of quadrature points
 ================== ============================ ================== =================================================
 
-Solution Fields and Simulation Settings
----------------------------------------
+.. _flow_vars:
 
-This section describes the members on the ``nrs`` object, which consist of user settings as well as the 
+Flow Solution Fields and Simulation Settings
+--------------------------------------------
+
+This section describes the members on the ``nrs`` object, which consist of user settings as well as the flow
 solution. Some of this information is simply assigned a value also stored on the ``nrs->mesh`` object.
 Some notable points that require additional comment:
 
@@ -90,9 +92,14 @@ Some notable points that require additional comment:
   ``i * (fieldOffset - Nlocal)``, where ``i`` is the component number, because those values are not actually
   used to store the solution (they are the end of a storage buffer).
 
-================== ============================ ================== ===========================================================================
+Some members only exist on the device - in this case, the variable name shown in the first column
+explicitly shows the ``o_`` prefix to differentiate that this member is not available in this form
+on the host. For instance, the ``o_mue`` member is only available on the device - there is no
+corresponding array ``nrs->mue`` member.
+
+================== ============================ ================== ======================================================================================================
 Variable Name      Size                         Device?            Meaning
-================== ============================ ================== ===========================================================================
+================== ============================ ================== ======================================================================================================
 ``cds``            1                                               convection-diffusion solution object
 ``cht``            1                                               whether the problem contains conjugate heat transfer
 ``dim``            1                                               spatial dimension of ``nrs->mesh``
@@ -107,8 +114,32 @@ Variable Name      Size                         Device?            Meaning
 ``Nscalar``        1                                               number of passive scalars to solve for
 ``NTfields``       1                                               number of flow-related fields to solve for (:math:`\vec{V}` plus :math:`T`)
 ``NVfields``       1                                               number of velocity fields to solve for
+``o_mue``          ``fieldOffset``              :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) for the momentum equation
 ``options``        1                                               object containing user settings from ``.par`` file
+``o_rho``          ``fieldOffset``              :math:`\checkmark` density for the momentum equation
 ``P``              ``fieldOffset``              :math:`\checkmark` pressure solution for most recent time step
+``prop``           ``2 * fieldOffset``          :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) and density (in this order) for the momentum equation
 ``U``              ``NVfields * fieldOffset``   :math:`\checkmark` velocity solution for all components for most recent time step
-================== ============================ ================== ===========================================================================
+================== ============================ ================== ======================================================================================================
+
+Passive Scalar Solution Fields and Simulation Settings
+------------------------------------------------------
+
+This section describes the members on the ``cds`` object, which consist of user settings as well as the
+passive scalar solution. Note that, from :ref:`Flow Solution Fields and Simulation Settings <flow_vars>`,
+the ``cds`` object is itself stored on the ``nrs`` flow solution object. Many of these members are
+copied from the analogous variable on the ``nrs`` object. For instance, ``cds->fieldOffset`` is simply
+set equal to ``nrs->fieldOffset``. In a few cases, however, the names on the ``cds`` object differ
+from the analogous names on the ``nrs`` object, such as for ``cds->NSfields`` and ``nrs->Nscalar``, which
+contain identical information.
+
+================== ============================== ================== ======================================================================================================
+Variable Name      Size                           Device?            Meaning
+================== ============================== ================== ======================================================================================================
+``fieldOffset``    1                                                 offset in passive scalar solution arrays to access new component
+``NSfields``       1                                                 number of passive scalars to solve for
+``o_diff``         ``NSfields * fieldOffset``     :math:`\checkmark` diffusion coefficient (laminar plus turbulent) for the passive scalar equations
+``o_rho``          ``NSfields * fieldOffset``     :math:`\checkmark` coefficient on the time derivative for the passive scalar equations
+``prop``           ``2 * NSfields * fieldOffset`` :math:`\checkmark` diffusion coefficient (laminar plus turbulent) and coefficient on the time derivative (in this order) for the passive scalar equations
+================== ============================== ================== ======================================================================================================
 
