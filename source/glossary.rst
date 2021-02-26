@@ -71,6 +71,9 @@ Glossary
     RANS
       Reynolds-Averaged Navier-Stokes
 
+    SST
+      Shear Stress Transport
+
     UIUC
       The University of Illinois at Urbana-Champaign
 

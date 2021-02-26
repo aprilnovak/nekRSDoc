@@ -137,7 +137,7 @@ Specifically, the mean is a time average of :math:`f`, of
 
 .. math::
 
-  \overline{f}=\lim_{t'\rightarrow\infty}\frac{1}{S}\int_{t}^{t+S}f(\mathbf x,t)dt
+  \overline{f}=\lim_{S\rightarrow\infty}\frac{1}{S}\int_{t}^{t+S}f(\mathbf x,t)dt
 
 Inserting the above "Reynolds decomposition" for :math:`\mathbf u`, :math:`P`, and :math:`T`
 into the governing equations then gives the :term:`RANS` equations. The discussion here focuses
@@ -166,6 +166,9 @@ this new stress term is referred to as the Reynolds stress tensor. The new term,
 of momentum transfer due to turbulence. The objective of :term:`RANS` models is to provide
 a closure for the Reynolds stress tensor in terms of the mean flow such that the time-averaged
 equations can be solved for the mean flow.
+
+Boussinesq Approximation
+^^^^^^^^^^^^^^^^^^^^^^^^
 
 The :term:`RANS` models in nekRS are based on the Boussinesq eddy viscosity approximation,
 which assumes that the momentum flux that induces the Reynolds stresses shares the same
@@ -200,10 +203,177 @@ model for the Reynolds stress tensor into the incompressible flow mean momentum 
 
   \rho\left(\frac{\partial\overline{u_i}}{\partial t}+\overline{u_j}\frac{\partial\overline{u_i}}{\partial x_j}\right)=-\frac{\partial \overline{P}}{\partial x_i}+\frac{\partial}{\partial x_j}\left\lbrack 2\left(\mu+\mu_T\right) \overline{S_{ij}}-\frac{2}{3}\rho k\delta_{ij}\right\rbrack+\rho\overline{\mathbf f}
 
+:math:`k`-:math:`\tau` Model
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+nekRS uses the :math:`k`-:math:`\tau` turbulence model to close the mean flow equations :footcite:`kalitzin`.
+Because the :math:`k`-:math:`\epsilon`, :math:`k`-:math:`\omega`, and :math:`k`-:math:`\omega`
+:term:`SST` models tend to dominate the :term:`RANS` space, extra discussion is devoted here
+to motivating the use of this particular model.
+
+.. note::
+
+  Take care not to confuse the inverse of the specific dissipation rate, :math:`\tau`, with
+  the deviatoric molecular stress tensor, which is also represented here as :math:`\tau` due to convention.
+
+Motivation for the :math:`k`-:math:`\tau` Model
+"""""""""""""""""""""""""""""""""""""""""""""""
+
+The :math:`k`-:math:`\tau` model is a modification of the standard :math:`k`-:math:`\omega`
+turbulence model that bases the second transport equation on the *inverse* of the specific
+dissipation rate :math:`\omega`,
+
+.. math::
+
+  \tau\equiv\frac{1}{\omega}
+
+rather than the on :math:`\omega`.
+The :math:`k`-:math:`\tau` model attempts to retain two important
+features of the :math:`k`-:math:`\omega` model -
+
+  1. Good predictions for flows with adverse pressure gradients and separation, and
+  2. Reasonable prediction of boundary layers and near-wall behavior without wall functions
+     or special low-:math:`Re_t` treatments.
+
+These two aspects contribute to better predictions of complex flows with reduced
+numerical complexity associated with wall functions or introducing
+damping functions that can cause stiff behavior :footcite:`kok` and inaccurate flow predictions. By introducing the
+definition of :math:`\tau\equiv 1/\omega`, the :math:`k`-:math:`\tau` model attemps to improve upon
+the :math:`k`-:math:`\omega` model in two main ways -
+
+  1. Simplify wall boundary conditions for the second transport equation, and
+  2. Bound the source terms in the second transport equation in near-wall regions.
+
+As :math:`y\rightarrow 0`, :math:`\omega\rightarrow y^{-2}`, while
+:math:`k\rightarrow 0` :footcite:`kok`. Therefore, while :math:`\omega` is infinite
+at walls, :math:`\tau` is zero. Traditionally, this singular behavior in :math:`\omega`
+was treated by applying "rough wall" boundary conditions to :math:`\omega`
+with the wall roughness set to a "small enough" value to simulate a hydraulically
+smooth wall :footcite:`kok`. However, this ad hoc approach retains a strong dependence
+on the near-wall mesh resolution, often requiring prohibitively fine elements to
+accurately predict boundary layer properties :footcite:`kalitzin`. And,
+such an approach retains near-singular behavior in the first and second derivatives of
+:math:`\omega`. Applying a zero boundary condition to :math:`\tau`
+on solid walls is comparatively trivial.
+
+With regards to the second point, the :math:`\omega` transport equation contains a source term
+propotional to :math:`\omega^2`; because :math:`\omega\rightarrow y^{-2}` as :math:`y\rightarrow 0`,
+this source term displays singular behavior as :math:`y\rightarrow 0`. Singular behavior
+of the source terms can result in large numerical errors and stiffness that negatively
+affects the convergence of the computational solution. Conversely, all source terms in
+the :math:`\tau` equation are bounded :footcite:`kok`.
+
+With this motivation, the :math:`k` and :math:`\tau` equations are described next.
+A slightly lengthier description is provided for each in order to give greater context
+to the genesis of this model.
+
+The :math:`k` Equation
+""""""""""""""""""""""
+
+The :math:`k`
+equation is a *model* version of the *true* :math:`k` equation. The *true* :math:`k`
+equation is derived by taking the trace of the Reynolds stress equation, a process that
+is itself motivated by recognition that the trace of the Reynolds stress tensor is equal
+to :math:`2k`,
+
+.. math::
+
+  \overline{u_i'u_i'}=2k
+
+The *true* :math:`k` equation contains terms that depend on the mean flow velocity,
+:math:`k`, and the dissipation, in addition to more exotic terms such as
+:math:`\overline{u_i'u_i'u_j'}` and :math:`\overline{P'u_j'}`. These additional fluctuating
+terms do not bring the *true* :math:`k` equation any closer to a tractable solution,
+so Prandtl introduced a :math:`\partial k/\partial x_j`
+gradient diffusion approximation for the turbulent transport and
+pressure diffusion terms (:math:`\frac{1}{2}\rho\overline{u_i'u_i'u_j'}+\overline{P'u_j'}`)
+with a diffusion coefficient of :math:`\mu_T/\sigma_k`, where :math:`\sigma_k`
+is a constant :footcite:`wilcox`. With this gradient diffusion model, the *true*
+:math:`k` equation is simplified to a tractable *model* :math:`k` equation :footcite:`launder`,
+
+.. math::
+
+  \frac{\partial(\rho k )}{\partial t}+\nabla\cdot\left(\rho k\overline{\mathbf u}\right)=\nabla\cdot\left\lbrack\left(\mu+\frac{\mu_T}{\sigma_k}\right)\nabla k\right\rbrack+\mathscr{P}-\rho\epsilon
+
+where :math:`\mathscr{P}` is the production of turbulent kinetic energy by velocity shear,
+
+.. math::
+
+  \mathscr{P}\equiv\rho\overline{u_i'u_j'}\frac{\partial\overline{u_i}}{\partial x_j}
+
+and :math:`\epsilon` is the dissipation per unit mass,
+
+.. math::
+
+  \epsilon\equiv\nu\overline{\frac{\partial u_i'}{\partial x_j}\frac{\partial u_i'}{\partial x_j}}
+
+The production term represents the rate at which energy is transferred from the mean
+flow to the turbulent flow, while the dissipation term represents the rate at which
+turbulent kinetic energy is converted to heat. Note that the only difference between this
+*model* :math:`k` equation and the *true* :math:`k` equation is the introduction of the
+gradient diffusion approximation for the turbulent transport and pressure diffusion terms.
+
+The :math:`k` equation used in the
+:math:`k`-:math:`\tau` model is then
+obtained as a simple transformation of
+the standard :math:`k` equation by the following
+relationship originally proposed by Wilcox :footcite:`kalitzin`,
+
+.. math::
+
+  \omega\equiv\frac{\epsilon}{\beta^*k}
+
+where :math:`\beta^*` is a constant. Inserting :math:`\omega\beta^*k`
+for :math:`\epsilon` in the dissipation term :math:`\rho\epsilon` gives
+the :math:`k` equation used in nekRS,
+
+.. math::
+
+  \frac{\partial(\rho k )}{\partial t}+\nabla\cdot\left(\rho k\overline{\mathbf u}\right)=\nabla\cdot\left\lbrack\left(\mu+\frac{\mu_T}{\sigma_k}\right)\nabla k\right\rbrack+\mathscr{P}-\rho\beta^*\frac{k}{\tau}
+
+The :math:`\tau` Equation
+"""""""""""""""""""""""""
+
+In two-equation :term:`RANS` turbulence modeling, the greatest source of uncertainty is
+the proper choice of the second transport variable. While a *true* :math:`k` equation
+is often used as the starting point for developing the *model* :math:`k` equation,
+it is commonplace to start immediately from an ad hoc, "fabricated," model equation
+for the second turbulence variable.
+In 1942, Kolmogorov was the first to
+propose the :math:`k`-:math:`\omega` model :footcite:`wilcox`. His formulation was
+very heuristic - from the Boussinesq approximation, it is likely that
+:math:`\nu_T\propto k`, which requires another variable with dimensions inverse time.
+
+Based on the work of Kolmogorov and many subsequent researches of the
+:math:`k`-:math:`\omega` model, inserting :math:`\tau\equiv 1/\omega` into the
+:math:`\omega` equation gives the :math:`\tau` equation in a very similar approach
+as was used to obtained the :math:`k` equation.
+The :math:`\tau` equation is :footcite:`kok`
+
+.. math::
+
+  \frac{\partial(\rho\tau)}{\partial t}+\nabla\cdot\left(\rho\tau\overline{\mathbf u}\right)=\nabla\cdot\left\lbrack\left(\mu+\frac{\mu_T}{\sigma_\tau}\right)\nabla \tau\right\rbrack-\alpha\frac{\tau}{k}\mathscr{P}+\rho\beta-2\frac{\mu}{\tau}\nabla\tau\cdot\nabla\tau
+
+..
+   TODO:
+   The Kok version has
+   mu_t/sigma_tau added to the viscosity on the last term.
+
+where :math:`\sigma_\tau`, :math:`\alpha`, and :math:`\beta` are constants. The
+last term on the right-hand side of the :math:`\tau` equation is in practice
+implemented in the form
+
+.. math::
+
+  \frac{2}{\tau}\nabla\tau\cdot\nabla\tau\rightarrow 8\nabla\sqrt{\tau}\cdot\nabla\sqrt{\tau}
+
+in order to reduce the discretization error associated with the computation
+of gradients of a term that scales as :math:`y^2` as :math:`y\rightarrow 0` :footcite:`kok`.
+
 
 .. note::
 
   Even if the molecular viscosity is constant, you must set ``stressFormulation = true`` in
   the input file because the total viscosity (molecular plus turbulent) will not be constant.
 
-
+.. footbibliography::
