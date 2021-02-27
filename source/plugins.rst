@@ -103,7 +103,7 @@ in the ``.udf`` file:
 The ``RANSktau::updateProperties`` function performs two main actions:
 
   1. Apply a limiter to :math:`k` and :math:`\tau` as described in
-     :ref:`Closure Coefficients and Other Details <rans_details>`.
+     :ref:`RANS Models <rans_models>`.
   2. Compute the turbulent viscosity as :math:`\mu_T\equiv\rho k\tau`
      and then set the diffusion coefficients in the momentum, :math:`k`,
      and :math:`\tau` equations to be :math:`\mu+\mu_T`,
@@ -158,7 +158,22 @@ Finally, the last step to initialize the :term:`RANS` solve is to call the
 ``void setup(nrs_t * nrs, dfloat mu, dfloat rho, int ifld)`` - ``nrs`` is the
 flow simulation object, ``mu`` is the *constant* laminar viscosity, ``rho`` is
 the *constant* density, and ``ifld`` is the integer corresponding to the
-:math:`k` scalar. As mentioned previously, nekRS's :math:`k`-:math:`\tau` model
+:math:`k` scalar. This function should be called in ``UDF_Setup`` as follows:
+
+.. code-block:: cpp
+
+  void UDF_Setup(nrs_t * nrs)
+  {
+    // other stuff unrelated to calling RANSktau::setup
+
+    const int scalarFieldStart = 1;
+    dfloat mu_laminar, rho;
+    nrs->options.getArgs("VISCOSITY", mu_laminar);
+    nrs->options.getArgs("DENSITY", rho);
+    RANSktau::setup(nrs, mu_laminar, rho, scalarFieldStart)
+  }
+
+As mentioned previously, nekRS's :math:`k`-:math:`\tau` model
 is currently restricted to constant laminar dynamic viscosity and constant density,
 and the values passed into this ``setup`` function define those properties.
 
@@ -166,6 +181,8 @@ and the values passed into this ``setup`` function define those properties.
 
   For consistency, be sure that the viscosity and density passed in to
   ``RANSktau::setup`` are the same as the properties used in the mean flow equations.
+  In the example above, this is ensured by grabbing the ``VISCOSITY`` and
+  ``DENSITY`` input parameters from the ``.par`` file.
 
 Finally, ``ifld`` simply indicates where in the sequence of passive scalars the
 :math:`k` scalar is positioned. For instance, if your problem has a temperature

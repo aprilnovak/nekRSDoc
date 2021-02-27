@@ -122,6 +122,8 @@ Low-Mach Partially-Compressible Model
 Stokes Equations
 ----------------
 
+.. _rans_models:
+
 RANS Models
 -----------
 
@@ -168,7 +170,7 @@ a closure for the Reynolds stress tensor in terms of the mean flow such that the
 equations can be solved for the mean flow.
 
 Boussinesq Approximation
-^^^^^^^^^^^^^^^^^^^^^^^^
+""""""""""""""""""""""""
 
 The :term:`RANS` models in nekRS are based on the Boussinesq eddy viscosity approximation,
 which assumes that the momentum flux that induces the Reynolds stresses shares the same
@@ -203,8 +205,8 @@ model for the Reynolds stress tensor into the incompressible flow mean momentum 
 
   \rho\left(\frac{\partial\overline{u_i}}{\partial t}+\overline{u_j}\frac{\partial\overline{u_i}}{\partial x_j}\right)=-\frac{\partial \overline{P}}{\partial x_i}+\frac{\partial}{\partial x_j}\left\lbrack 2\left(\mu+\mu_T\right) \overline{S_{ij}}-\frac{2}{3}\rho k\delta_{ij}\right\rbrack+\rho\overline{\mathbf f}
 
-:math:`k`-:math:`\tau` Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+The :math:`k`-:math:`\tau` Model
+""""""""""""""""""""""""""""""""
 
 nekRS uses the :math:`k`-:math:`\tau` turbulence model to close the mean flow equations :footcite:`kalitzin`.
 Because the :math:`k`-:math:`\epsilon`, :math:`k`-:math:`\omega`, and :math:`k`-:math:`\omega`
@@ -215,9 +217,6 @@ to motivating the use of this particular model.
 
   Take care not to confuse the inverse of the specific dissipation rate, :math:`\tau`, with
   the deviatoric molecular stress tensor, which is also represented here as :math:`\tau` due to convention.
-
-Motivation for the :math:`k`-:math:`\tau` Model
-"""""""""""""""""""""""""""""""""""""""""""""""
 
 The :math:`k`-:math:`\tau` model is a modification of the standard :math:`k`-:math:`\omega`
 turbulence model that bases the second transport equation on the *inverse* of the specific
@@ -267,8 +266,7 @@ With this motivation, the :math:`k` and :math:`\tau` equations are described nex
 A slightly lengthier description is provided for each in order to give greater context
 to the genesis of this model.
 
-The :math:`k` Equation
-""""""""""""""""""""""
+**The** :math:`k` **Equation**
 
 The :math:`k`
 equation is a *model* version of the *true* :math:`k` equation. The *true* :math:`k`
@@ -331,8 +329,7 @@ the :math:`k` equation used in nekRS,
 
   \frac{\partial(\rho k )}{\partial t}+\nabla\cdot\left(\rho k\overline{\mathbf u}\right)=\nabla\cdot\left\lbrack\left(\mu+\frac{\mu_T}{\sigma_k}\right)\nabla k\right\rbrack+\mathscr{P}-\rho\beta^*\frac{k}{\tau}
 
-The :math:`\tau` Equation
-"""""""""""""""""""""""""
+**The** :math:`\tau` **Equation**
 
 In two-equation :term:`RANS` turbulence modeling, the greatest source of uncertainty is
 the proper choice of the second transport variable. While a *true* :math:`k` equation
@@ -370,8 +367,7 @@ implemented in the form
 in order to reduce the discretization error associated with the computation
 of gradients of a term that scales as :math:`y^2` as :math:`y\rightarrow 0` :footcite:`kok`.
 
-The Eddy Viscosity
-""""""""""""""""""
+**The Eddy Viscosity**
 
 The objective of :term:`RANS` models is to estimate the eddy viscosity :math:`\mu_T`
 that appears in the Boussinesq approximation. The particular form for :math:`\mu_T`
@@ -397,10 +393,7 @@ researchers and the :math:`k`-:math:`\tau` researchers.
 ..
   TODO: is this the correct explanation for why there's no coefficient in the mu_t equation?
 
-.. _rans_details:
-
-Closure Coefficients and Other Details
-""""""""""""""""""""""""""""""""""""""
+**Closure Coefficients and Other Details**
 
 Table :ref:`RANS Coefficients <rans_coeffs>` shows the values for the various
 constants used in nekRS's :math:`k`-:math:`\tau` model.
@@ -412,12 +405,12 @@ constants used in nekRS's :math:`k`-:math:`\tau` model.
   ==================== =================== ======
   Coefficient          Value               Source
   ==================== =================== ======
-  :math:`\sigma_k`     :math:`\frac{5}{3}`
+  :math:`\sigma_k`     :math:`5/3`
   :math:`\sigma_\tau`  :math:`2.0`
   ==================== =================== ======
 
 A limiter is applied to both :math:`k` and :math:`\tau` to prevent negative values
-of either :math:`k` or :math:`tau`,
+of either :math:`k` or :math:`\tau`,
 
 .. math::
 
