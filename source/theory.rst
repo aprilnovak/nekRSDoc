@@ -208,7 +208,7 @@ model for the Reynolds stress tensor into the incompressible flow mean momentum 
 The :math:`k`-:math:`\tau` Model
 """"""""""""""""""""""""""""""""
 
-nekRS uses the :math:`k`-:math:`\tau` turbulence model to close the mean flow equations :footcite:`kalitzin`.
+nekRS uses the :math:`k`-:math:`\tau` turbulence model to close the mean flow equations [Kalitzin]_.
 Because the :math:`k`-:math:`\epsilon`, :math:`k`-:math:`\omega`, and :math:`k`-:math:`\omega`
 :term:`SST` models tend to dominate the :term:`RANS` space, extra discussion is devoted here
 to motivating the use of this particular model.
@@ -236,7 +236,7 @@ features of the :math:`k`-:math:`\omega` model -
 
 These two aspects contribute to better predictions of complex flows with reduced
 numerical complexity associated with wall functions or introducing
-damping functions that can cause stiff behavior :footcite:`kok` and inaccurate flow predictions. By introducing the
+damping functions that can cause stiff behavior [Kok]_ and inaccurate flow predictions. By introducing the
 definition of :math:`\tau\equiv 1/\omega`, the :math:`k`-:math:`\tau` model attemps to improve upon
 the :math:`k`-:math:`\omega` model in two main ways -
 
@@ -244,13 +244,13 @@ the :math:`k`-:math:`\omega` model in two main ways -
   2. Bound the source terms in the second transport equation in near-wall regions.
 
 As :math:`y\rightarrow 0`, :math:`\omega\rightarrow y^{-2}`, while
-:math:`k\rightarrow 0` :footcite:`kok`. Therefore, while :math:`\omega` is infinite
+:math:`k\rightarrow 0` [Kok]_. Therefore, while :math:`\omega` is infinite
 at walls, :math:`\tau` is zero. Traditionally, this singular behavior in :math:`\omega`
 was treated by applying "rough wall" boundary conditions to :math:`\omega`
 with the wall roughness set to a "small enough" value to simulate a hydraulically
-smooth wall :footcite:`kok`. However, this ad hoc approach retains a strong dependence
+smooth wall [Kok]_. However, this ad hoc approach retains a strong dependence
 on the near-wall mesh resolution, often requiring prohibitively fine elements to
-accurately predict boundary layer properties :footcite:`kalitzin`. And,
+accurately predict boundary layer properties [Kalitzin]_. And,
 such an approach retains near-singular behavior in the first and second derivatives of
 :math:`\omega`. Applying a zero boundary condition to :math:`\tau`
 on solid walls is comparatively trivial.
@@ -260,7 +260,7 @@ propotional to :math:`\omega^2`; because :math:`\omega\rightarrow y^{-2}` as :ma
 this source term displays singular behavior as :math:`y\rightarrow 0`. Singular behavior
 of the source terms can result in large numerical errors and stiffness that negatively
 affects the convergence of the computational solution. Conversely, all source terms in
-the :math:`\tau` equation are bounded :footcite:`kok`.
+the :math:`\tau` equation are bounded [Kok]_.
 
 With this motivation, the :math:`k` and :math:`\tau` equations are described next.
 A slightly lengthier description is provided for each in order to give greater context
@@ -286,8 +286,8 @@ so Prandtl introduced a :math:`\partial k/\partial x_j`
 gradient diffusion approximation for the turbulent transport and
 pressure diffusion terms (:math:`\frac{1}{2}\rho\overline{u_i'u_i'u_j'}+\overline{P'u_j'}`)
 with a diffusion coefficient of :math:`\mu_T/\sigma_k`, where :math:`\sigma_k`
-is a constant :footcite:`wilcox`. With this gradient diffusion model, the *true*
-:math:`k` equation is simplified to a tractable *model* :math:`k` equation :footcite:`launder`,
+is a constant [Wilcox]_. With this gradient diffusion model, the *true*
+:math:`k` equation is simplified to a tractable *model* :math:`k` equation [Launder]_,
 
 .. math::
 
@@ -315,7 +315,7 @@ The :math:`k` equation used in the
 :math:`k`-:math:`\tau` model is then
 obtained as a simple transformation of
 the standard :math:`k` equation by the following
-relationship originally proposed by Wilcox :footcite:`kalitzin`,
+relationship originally proposed by Wilcox [Wilcox]_,
 
 .. math::
 
@@ -337,7 +337,7 @@ is often used as the starting point for developing the *model* :math:`k` equatio
 it is commonplace to start immediately from an ad hoc, "fabricated," model equation
 for the second turbulence variable.
 In 1942, Kolmogorov was the first to
-propose the :math:`k`-:math:`\omega` model :footcite:`wilcox`. His formulation was
+propose the :math:`k`-:math:`\omega` model [Wilcox]_. His formulation was
 very heuristic - from the Boussinesq approximation, it is likely that
 :math:`\nu_T\propto k`, which requires another variable with dimensions inverse time.
 
@@ -345,7 +345,7 @@ Based on the work of Kolmogorov and many subsequent researches of the
 :math:`k`-:math:`\omega` model, inserting :math:`\tau\equiv 1/\omega` into the
 :math:`\omega` equation gives the :math:`\tau` equation in a very similar approach
 as was used to obtained the :math:`k` equation.
-The :math:`\tau` equation is :footcite:`kok`
+The :math:`\tau` equation is [Kok]_
 
 .. math::
 
@@ -365,14 +365,14 @@ implemented in the form
   \frac{2}{\tau}\nabla\tau\cdot\nabla\tau\rightarrow 8\nabla\sqrt{\tau}\cdot\nabla\sqrt{\tau}
 
 in order to reduce the discretization error associated with the computation
-of gradients of a term that scales as :math:`y^2` as :math:`y\rightarrow 0` :footcite:`kok`.
+of gradients of a term that scales as :math:`y^2` as :math:`y\rightarrow 0` [Kok]_.
 
 **The Eddy Viscosity**
 
 The objective of :term:`RANS` models is to estimate the eddy viscosity :math:`\mu_T`
 that appears in the Boussinesq approximation. The particular form for :math:`\mu_T`
 can be understood here in terms of the standard :math:`k`-:math:`\epsilon`
-model, for which :math:`\mu_T` is given as :footcite:`launder`
+model [Launder]_, for which :math:`\mu_T` is given as
 
 
 .. math::
@@ -380,7 +380,7 @@ model, for which :math:`\mu_T` is given as :footcite:`launder`
   \mu_T=C_\mu\rho\frac{k^2}{\epsilon}
 
 where :math:`C_\mu` is a constant. Inserting :math:`\tau\equiv 1/\omega` and
-:math:`\epsilon=\beta^*\omega k` gives :footcite:`kok`
+:math:`\epsilon=\beta^*\omega k` gives
 
 .. math::
 
@@ -388,7 +388,7 @@ where :math:`C_\mu` is a constant. Inserting :math:`\tau\equiv 1/\omega` and
 
 which presumes that :math:`C_\mu` and :math:`\beta^*` are really the same constant,
 but with different notation developed separately by the :math:`k`-:math:`\epsilon`
-researchers and the :math:`k`-:math:`\tau` researchers.
+researchers and the :math:`k`-:math:`\tau` researchers [Kok]_.
 
 ..
   TODO: is this the correct explanation for why there's no coefficient in the mu_t equation?
@@ -431,5 +431,3 @@ of either :math:`k` or :math:`\tau`,
 
   Even if the molecular viscosity is constant, you must set ``stressFormulation = true`` in
   the input file because the total viscosity (molecular plus turbulent) will not be constant.
-
-.. footbibliography::

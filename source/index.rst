@@ -41,6 +41,7 @@ Table of Contents
    just_in_time_compilation
    doxygen
    glossary
+   references
 
 .. Indices and tables
 .. ==================
