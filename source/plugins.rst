@@ -55,6 +55,8 @@ The ``RANSKtau::buildKernel`` function performs two main actions -
   2. Add the :term:`OCCA` kernels that will perform the calculations needed to apply
      the :math:`k`-:math:`\tau` model.
 
+.. _rans_props:
+
 Add the Closure Properties Calculation
 """"""""""""""""""""""""""""""""""""""
 Next, add the function that will update the properties used in the governing equations.
@@ -149,6 +151,78 @@ in the ``.udf`` file:
   {
     RANSktau::updateSourceTerms();
   }
+
+Add the Turbulent Prandtl Number
+""""""""""""""""""""""""""""""""
+For cases with passive scalar equations, you must manually
+add the additional component to the diffusivity, :math:`\mu_T/Pr_T`. This is done
+in the function pointer to be the ``udf.properties`` function pointer *after*
+updating the the closure properties for the momentum equation as described in
+:ref:`Add the Closure Properties Calculation <rans_props>`. Building on the
+closure property example, this section shows an example for applying the
+additional turbulent contribution to the diffusivity for a case with one
+passive scalar that represents temperature.
+
+.. note::
+
+  Manual adjustment to the conductivity is only required for the passive
+  scalar equations that represent mean flow properties - that is, you do
+  not need to manually adjust the conductivity for other passive scalars that
+  represent turbulence quantities, such as :math:`k` or :math:`\tau`. But if
+  your case has both temperature and chemical concentration passive scalars,
+  for instance, you will need to perform similar adjustments to the diffusivity
+  in the chemical concentration equation as to the adjustments shown in this
+  example for the temperature passive scalar equation.
+
+The following adjustment to the energy equation
+diffusion coefficient should be performed in our ``material_properties``
+function:
+
+.. code-block:: cpp
+
+  void material_props(nrs_t* nrs, dfloat time, occa::memory o_U, occa::memory o_S,
+  occa::memory o_UProp, occa::memory o_SProp)
+  {
+    // update the momentum equation properties, as described earlier
+    RANSktau::updateProperties();
+
+    // fetch the laminar thermal conductivity
+    dfloat k_laminar;
+    nrs->options.getArgs("SCALAR00 DIFFUSIVITY", k_laminar);
+
+    // manually update the energy equation diffusivity
+    const dfloat Pr_T = 0.9;
+    occa::memory o_mu_T = RANSktau::o_mue_t();
+    occa::memory o_mu = cds->o_diff + 0 * cds->fieldOffset * sizeof(dfloat);
+    nrs->scalarScaledAddKernel(nrs->Nlocal, k_laminar, 1.0 / Pr_T, o_mu_T, o_mu);
+  }
+
+The ``scalarScaledAddKernel`` is an :term:`OCCA` kernel that scales an input by
+a scalar and then adds a constant scalar to the multiplication. That is, this kernel
+computes
+
+.. math::
+
+  y = a + bx
+
+where :math:`a` is the kernel's second input parameter, :math:`b` the third input
+parameter, and :math:`x` the fourth input parameter. First, we fetch the laminar
+thermal conductivity that was set in the ``.par`` file and save it locally in
+``k_laminar``. Then, we define the turbulent Prandtl number - for this case, we set
+it to ``0.9``. Next, we grab the turbulent viscosity just computed in
+``RANSktau::updateProperties()`` by calling ``RANSktau::o_mue_t()``, which simply
+returns the turbulent viscosity. We will save the turbulent conductivity in the
+first passive scalar "slot" (because we are adjusted the conductivity for the
+temperature equation, i.e. the first passive scalar) in ``cds->o_diff``, which stores the conductivity
+(laminar plus turbulent) for all passive scalars. To summarize, the
+``scalarScaledAddKernel`` kernel is adjusting the diffusion coefficient in
+the temperature passive scalar equation to be
+
+.. math::
+
+  k+\frac{\mu_T}{Pr_T}
+
+where :math:`k` is the laminar conductivity.
 
 Initialize the RANS Solve
 """""""""""""""""""""""""

@@ -128,23 +128,34 @@ RANS Models
 -----------
 
 The :term:`RANS` equations are derived from the conservation of mass, momentum, and energy
-equations by expressing each field :math:`f` as the sum of a mean :math:`\overline{f}` and a fluctuation,
+equations by expressing each term in the equation as the sum of a mean and a fluctuation.
+Because nekRS is based on the incompressible flow model, all such averages (even for the
+energy equation) are based on the notion of *Reynolds averaging*, where
+each field :math:`f` is expressed as the sum of a time mean :math:`\overline{f}` and a time fluctuation,
 :math:`f'`,
 
 .. math::
 
   f(\mathbf x, t)=\overline{f}(\mathbf x)+f'(\mathbf x,t)
 
-Specifically, the mean is a time average of :math:`f`, of
+where the time averaged is defined as
 
 .. math::
 
   \overline{f}=\lim_{S\rightarrow\infty}\frac{1}{S}\int_{t}^{t+S}f(\mathbf x,t)dt
 
+For compressible flows in which energy conservation affects density, the :term:`RANS`
+equations are instead derived with *Favre averaging*, where each field :math:`f_i`
+is expressed as the sum of a density-weighted time average :math:`\tilde{f}_i`
+and a fluctuation :math:`f_i^{''}`. It is therefore an important distinction here that
+we only consider *Reynolds averaging*, which leads to a simpler formulation of
+the :term:`RANS` energy conservation equation that the compressible flow case.
+
 Inserting the above "Reynolds decomposition" for :math:`\mathbf u`, :math:`P`, and :math:`T`
-into the governing equations then gives the :term:`RANS` equations. The discussion here focuses
-on the incompressible flow equations in :ref:`Incompressible Flow Model <ins_model>`, for
-which the :term:`RANS` mass and momentum equations are
+into the governing equations and averaging in time
+then gives the :term:`RANS` equations. For
+the incompressible flow equations in :ref:`Incompressible Flow Model <ins_model>`,
+the :term:`RANS` mass, momentum, and energy equations are
 
 .. math::
 
@@ -154,19 +165,29 @@ which the :term:`RANS` mass and momentum equations are
 
   \rho\left(\frac{\partial\overline{u_i}}{\partial t}+\overline{u_j}\frac{\partial\overline{u_i}}{\partial x_j}+\frac{\partial}{\partial x_j}\overline{u_i'u_j'}\right)=-\frac{\partial \overline{P}}{\partial x_i}+\frac{\partial}{\partial x_j}\left(2\mu \overline{S_{ij}}\right)+\rho\overline{\mathbf f}
 
+.. math::
+
+  \rho C_p\left(\frac{\partial\overline{T}}{\partial t}+\overline{u_i}\frac{\partial\overline{T}}{\partial x_i}+\frac{\partial\overline{u_i'T'}}{\partial x_i}\right)=\frac{\partial}{\partial x_i}\left(k\frac{\partial\overline{T}}{\partial x_i}\right)+\overline{\dot{q}}
+
 where :math:`\overline{S_{ij}}` is the mean strain rate tensor,
 
 .. math::
 
   \overline{S_{ij}}=\frac{1}{2}\left(\frac{\partial \overline{u_i}}{\partial x_j}+\frac{\partial\overline{u_j}}{\partial x_i}\right)
 
-The mass and momentum conservation equations have the same form as the instantaneous flow
+The mass, momentum, and energy conservation equations have the same form as the instantaneous flow
 equations in :ref:`Incompressible Flow Model <ins_model>` except for the addition of another
-stress tensor to the momentum equation - :math:`\rho \overline{u_i'u_j'}`;
-this new stress term is referred to as the Reynolds stress tensor. The new term,
+stress tensor to the momentum equation - :math:`\rho \overline{u_i'u_j'}`, and the addition
+of another heat flux vector to the energy equation - :math:`\rho C_p\overline{u_i'T'}`.
+The stress term in the momentum equation
+is referred to as the Reynolds stress tensor;
 :math:`\rho\ \partial(\overline{u_i'u_j'})/\partial x_j` represents the time-averaged rate
-of momentum transfer due to turbulence. The objective of :term:`RANS` models is to provide
-a closure for the Reynolds stress tensor in terms of the mean flow such that the time-averaged
+of momentum transfer due to turbulence. The heat flux term in the energy equation is
+referred to as the turbulent heat flux; :math:`\rho C_p\partial\overline{u_i'T'}/\partial x_i`
+represents the time-averaged rate of energy addition due to turbulence.
+The objective of :term:`RANS` models is to provide
+closures for the Reynolds stress tensor and turbulent heat flux vector in terms of the mean
+properties such that the time-averaged
 equations can be solved for the mean flow.
 
 Boussinesq Approximation
@@ -205,13 +226,44 @@ model for the Reynolds stress tensor into the incompressible flow mean momentum 
 
   \rho\left(\frac{\partial\overline{u_i}}{\partial t}+\overline{u_j}\frac{\partial\overline{u_i}}{\partial x_j}\right)=-\frac{\partial \overline{P}}{\partial x_i}+\frac{\partial}{\partial x_j}\left\lbrack 2\left(\mu+\mu_T\right) \overline{S_{ij}}-\frac{2}{3}\rho k\delta_{ij}\right\rbrack+\rho\overline{\mathbf f}
 
+Turbulent Prandtl Number
+""""""""""""""""""""""""
+
+Closure for the turbulent heat flux is typically motivated from considerations
+of the analogy between momentum and energy transfer; while the Boussinesq approximation
+was used to introduce a relationship between the Reynolds stress tensor :math:`\rho\overline{u_i'u_j'}`
+in terms of the mean strain rate, the turbulent heat flux is assumed proportional to
+the mean temperature gradient via a gradient diffusion approximation,
+
+.. math::
+
+  \rho C_p\overline{u_i'T'}=\alpha_T\frac{\partial \overline{T}}{\partial x_i}
+
+where :math:`\alpha_T` is the turbulent energy diffusivity. :math:`\alpha_T` is related
+to :math:`\mu_T`, the turbulent momentum diffusivity, by the turbulent Prandtl number
+:math:`Pr_T`,
+
+.. math::
+
+  Pr_T\equiv\frac{\mu_T}{\alpha_T}
+
+Inserting this gradient diffusion approximation into the incompressible flow
+mean energy equation then gives
+
+.. math::
+
+  \rho C_p\left(\frac{\partial\overline{T}}{\partial t}+\overline{u_i}\frac{\partial\overline{T}}{\partial x_i}\right)=\frac{\partial}{\partial x_i}\left(k+\frac{\mu_T}{Pr_T}\frac{\partial\overline{T}}{\partial x_i}\right)+\overline{\dot{q}}
+
 The :math:`k`-:math:`\tau` Model
 """"""""""""""""""""""""""""""""
 
 nekRS uses the :math:`k`-:math:`\tau` turbulence model to close the mean flow equations [Kalitzin]_.
 Because the :math:`k`-:math:`\epsilon`, :math:`k`-:math:`\omega`, and :math:`k`-:math:`\omega`
 :term:`SST` models tend to dominate the :term:`RANS` space, extra discussion is devoted here
-to motivating the use of this particular model.
+to motivating the use of this particular model. Because :math:`Pr_T` is typically taken as a
+constant, often 0.90 [Wilcox]_, the objective of incompressible flow :term:`RANS` models is to compute
+the eddy viscosity and :math:`k` needed to close the
+mean momentum and energy equations.
 
 .. note::
 
@@ -235,7 +287,7 @@ features of the :math:`k`-:math:`\omega` model -
      or special low-:math:`Re_t` treatments.
 
 These two aspects contribute to better predictions of complex flows with reduced
-numerical complexity associated with wall functions or introducing
+numerical complexity associated with wall functions or
 damping functions that can cause stiff behavior [Kok]_ and inaccurate flow predictions. By introducing the
 definition of :math:`\tau\equiv 1/\omega`, the :math:`k`-:math:`\tau` model attemps to improve upon
 the :math:`k`-:math:`\omega` model in two main ways -
@@ -260,7 +312,7 @@ propotional to :math:`\omega^2`; because :math:`\omega\rightarrow y^{-2}` as :ma
 this source term displays singular behavior as :math:`y\rightarrow 0`. Singular behavior
 of the source terms can result in large numerical errors and stiffness that negatively
 affects the convergence of the computational solution. Conversely, all source terms in
-the :math:`\tau` equation are bounded [Kok]_.
+the :math:`\tau` equation are bounded near walls [Kok]_.
 
 With this motivation, the :math:`k` and :math:`\tau` equations are described next.
 A slightly lengthier description is provided for each in order to give greater context
@@ -279,7 +331,7 @@ to :math:`2k`,
   \overline{u_i'u_i'}=2k
 
 The *true* :math:`k` equation contains terms that depend on the mean flow velocity,
-:math:`k`, and the dissipation, in addition to more exotic terms such as
+the turbulent kinetic energy, and the dissipation, in addition to more exotic terms such as
 :math:`\overline{u_i'u_i'u_j'}` and :math:`\overline{P'u_j'}`. These additional fluctuating
 terms do not bring the *true* :math:`k` equation any closer to a tractable solution,
 so Prandtl introduced a :math:`\partial k/\partial x_j`
@@ -315,7 +367,7 @@ The :math:`k` equation used in the
 :math:`k`-:math:`\tau` model is then
 obtained as a simple transformation of
 the standard :math:`k` equation by the following
-relationship originally proposed by Wilcox [Wilcox]_,
+relationship [Kok]_,
 
 .. math::
 
@@ -335,17 +387,21 @@ In two-equation :term:`RANS` turbulence modeling, the greatest source of uncerta
 the proper choice of the second transport variable. While a *true* :math:`k` equation
 is often used as the starting point for developing the *model* :math:`k` equation,
 it is commonplace to start immediately from an ad hoc, "fabricated," model equation
-for the second turbulence variable.
+for the second turbulence variable. Of course, "exact" equations can always be
+derived for the second turbulence variable through various operations on the mean Navier-Stokes
+equation or the Reynolds stress equation, but the exact equations for :math:`\epsilon`,
+:math:`\omega`, or other turbulence quantities tend to be far more complex than
+the exact equation for :math:`k` shown earlier.
+
 In 1942, Kolmogorov was the first to
 propose the :math:`k`-:math:`\omega` model [Wilcox]_. His formulation was
 very heuristic - from the Boussinesq approximation, it is likely that
 :math:`\nu_T\propto k`, which requires another variable with dimensions inverse time.
-
-Based on the work of Kolmogorov and many subsequent researches of the
+Based on the work of Kolmogorov and many subsequent researchers of the
 :math:`k`-:math:`\omega` model, inserting :math:`\tau\equiv 1/\omega` into the
-:math:`\omega` equation gives the :math:`\tau` equation in a very similar approach
-as was used to obtained the :math:`k` equation.
-The :math:`\tau` equation is [Kok]_
+:math:`\omega` equation gives the :math:`\tau` equation - this approach is very similar
+to that used to obtained the :math:`k` equation.
+The :math:`\tau` equation used in nekRS is [Kok]_
 
 .. math::
 
@@ -407,6 +463,7 @@ constants used in nekRS's :math:`k`-:math:`\tau` model.
   ==================== =================== ======
   :math:`\sigma_k`     :math:`5/3`
   :math:`\sigma_\tau`  :math:`2.0`
+  :math:`Pr_T`         user-selected       ---
   ==================== =================== ======
 
 A limiter is applied to both :math:`k` and :math:`\tau` to prevent negative values
