@@ -398,10 +398,16 @@ material properties. Its name is arbitrary, but it must have the following signa
    {
      // set the material properties
    }
- 
+
 This function is called *after* the solve has been performed on each time step, so the
 material properties are lagged by one time step with respect to the simulation.
- 
+
+.. note::
+
+  You must place the ``material_props`` function *before* ``UDF_Setup`` (and before any other
+  function that uses ``material_props``) in the ``.udf`` file in order for the just-in-time
+  compilation to succeed.
+
 Suppose we would like to set :math:`\rho=1000.0` and :math:`\mu=2.1e-5 e^{-\phi_0/500}(1+z)` for
 the flow equations; because only the fluid domain has flow, we do not need to set
 these properties on the solid part of the domain. For the first passive scalar

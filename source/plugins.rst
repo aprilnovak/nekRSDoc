@@ -193,7 +193,7 @@ function:
     // manually update the energy equation diffusivity
     const dfloat Pr_T = 0.9;
     occa::memory o_mu_T = RANSktau::o_mue_t();
-    occa::memory o_mu = cds->o_diff + 0 * cds->fieldOffset * sizeof(dfloat);
+    occa::memory o_mu = nrs->cds->o_diff + 0 * nrs->cds->fieldOffset * sizeof(dfloat);
     nrs->scalarScaledAddKernel(nrs->Nlocal, k_laminar, 1.0 / Pr_T, o_mu_T, o_mu);
   }
 
@@ -244,7 +244,7 @@ the *constant* density, and ``ifld`` is the integer corresponding to the
     dfloat mu_laminar, rho;
     nrs->options.getArgs("VISCOSITY", mu_laminar);
     nrs->options.getArgs("DENSITY", rho);
-    RANSktau::setup(nrs, mu_laminar, rho, scalarFieldStart)
+    RANSktau::setup(nrs, mu_laminar, rho, scalarFieldStart);
   }
 
 As mentioned previously, nekRS's :math:`k`-:math:`\tau` model
