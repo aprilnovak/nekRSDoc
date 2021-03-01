@@ -72,7 +72,7 @@ the pressure is non-dimensionalized in terms of the dynamic pressure as
 :math:`P^\dagger=\frac{P}{\rho_0 U^2}`.
 
 Inserting these non-dimensional variables
-into the conservation of mass, momentum, and energy equations gives
+into the conservation of mass and momentum equations gives
 
 .. math::
 
@@ -237,22 +237,28 @@ the mean temperature gradient via a gradient diffusion approximation,
 
 .. math::
 
-  \rho C_p\overline{u_i'T'}=\alpha_T\frac{\partial \overline{T}}{\partial x_i}
+  \rho C_p\overline{u_i'T'}=k_T\frac{\partial \overline{T}}{\partial x_i}
 
-where :math:`\alpha_T` is the turbulent energy diffusivity. :math:`\alpha_T` is related
+where :math:`k_T` is the turbulent conductivity. :math:`k_T` is related
 to :math:`\mu_T`, the turbulent momentum diffusivity, by the turbulent Prandtl number
 :math:`Pr_T`,
 
 .. math::
 
-  Pr_T\equiv\frac{\mu_T}{\alpha_T}
+  Pr_T\equiv\frac{\nu_T}{\alpha_T}
+
+where :math:`\nu_T\equiv\mu_T/rho` and :math:`\alpha_T` is the turbulent thermal diffusivity,
+
+.. math::
+
+  \alpha_T\equiv\frac{k_T}{\rho C_p}
 
 Inserting this gradient diffusion approximation into the incompressible flow
 mean energy equation then gives
 
 .. math::
 
-  \rho C_p\left(\frac{\partial\overline{T}}{\partial t}+\overline{u_i}\frac{\partial\overline{T}}{\partial x_i}\right)=\frac{\partial}{\partial x_i}\left(k+\frac{\mu_T}{Pr_T}\frac{\partial\overline{T}}{\partial x_i}\right)+\overline{\dot{q}}
+  \rho C_p\left(\frac{\partial\overline{T}}{\partial t}+\overline{u_i}\frac{\partial\overline{T}}{\partial x_i}\right)=\frac{\partial}{\partial x_i}\left\lbrack\left(k+\frac{\mu_T}{Pr_T}C_p\right)\frac{\partial\overline{T}}{\partial x_i}\right\rbrack+\overline{\dot{q}}
 
 The :math:`k`-:math:`\tau` Model
 """"""""""""""""""""""""""""""""
@@ -488,3 +494,93 @@ of either :math:`k` or :math:`\tau`,
 
   Even if the molecular viscosity is constant, you must set ``stressFormulation = true`` in
   the input file because the total viscosity (molecular plus turbulent) will not be constant.
+
+**Non-Dimensional Formulation**
+
+Now that the :math:`k`-:math:`\tau` model has been presented in its full form,
+the non-dimensional formulation is provided. Because nekRS's :math:`k`-:math:`\tau` model
+is currently limited to constant densities and laminar viscosities, the non-dimensional
+formulation is slightly simpler than the more general case shown in
+:ref:`Non-Dimensional Formulation <nondimensional_eqs>` that derived the non-dimensional
+form of the instantaneous Navier-Stokes equations.
+
+Introduce
+the non-dimensional variables :math:`\mathbf x^\dagger=\frac{\mathbf x}{L}`,
+:math:`\overline{\mathbf u}^\dagger=\frac{\overline{\mathbf u}}{U}`, :math:`t^\dagger=\frac{tU}{L}`,
+and :math:`\overline{\mathbf f}^\dagger=\frac{\overline{\mathbf f} L}{U^2}`.
+For convection-dominated flows,
+the pressure is non-dimensionalized in terms of the dynamic pressure as
+:math:`P^\dagger=\frac{P}{\rho U^2}`. Finally, the turbulent kinetic energy
+and inverse dissipation rate are non-dimensionalized as
+:math:`k^\dagger=\frac{k}{U^2}` and :math:`\tau^\dagger=\frac{\tau U}{L}`.
+
+Inserting these non-dimensional variables
+into the mean flow mass and momentum conservation equations gives
+
+.. math::
+
+  \frac{\partial \overline{u_i}^\dagger}{\partial x_i^\dagger}=0
+
+.. math::
+
+  \frac{\partial \overline{u_i}^\dagger}{\partial t^\dagger}+\overline{u_j}^\dagger\frac{\partial \overline{u_i}^\dagger}{\partial x_j^\dagger}=-\frac{\partial \overline{P}^\dagger}{\partial x_i^\dagger}+\frac{1}{Re}\left(1+\frac{\mu_T}{\mu}\right)\frac{\partial\overline{\tau_{ij}}^\dagger}{\partial x_j^\dagger}-\frac{\partial}{\partial x_j^\dagger}\left(\frac{2}{3}k^\dagger\delta_{ij}\right)+f_i^\dagger
+
+To non-dimensionalize the energy conservation equation, use the previous non-dimensional
+variables in addition to a non-dimensional temperature, :math:`T^\dagger=\frac{T-T_0}{\Delta T}`,
+where :math:`\Delta T` is a reference temperature rise relative to a baseline temperature
+:math:`T_0`. The heat source is non-dimensionalized as :math:`\dot{q}^\dagger=\frac{\dot{q}}{\rho C_{p} U\Delta T/L}`,
+which arises naturally from the simple formulation of bulk energy conservation of
+:math:`Q=\dot{m}C_p\Delta T`, where :math:`Q` is a heat source (units of Watts) and
+:math:`\dot{m}` is a mass flowrate.
+Inserting these non-dimensional variables into the energy conservation equation gives
+
+.. math::
+
+  \frac{\partial \overline{T}^\dagger}{\partial t^\dagger}+\overline{u_i}^\dagger\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}=\frac{1}{Pe}\left(1+\frac{\mu_T/Pr_T}{k}\rho C_p\right)\frac{\partial}{\partial x_i^\dagger}\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}+\dot{q}^\dagger
+
+To non-dimensionalize the :math:`k` and :math:`\tau` equations,
+define :math:`\mathscr{P}^\dagger=\frac{\mathscr{P}}{\rho U^3/L}`
+and :math:`\epsilon^\dagger=\frac{\epsilon}{U^3/L}`.
+With previous non-dimensional variables already defined, the non-dimensional :math:`k`
+and :math:`\tau` equations become
+
+.. math::
+
+  \frac{\partial k^\dagger}{\partial t^\dagger}+\overline{u_i}^\dagger\frac{\partial k^\dagger}{\partial x_i^\dagger}=\frac{1}{Re}\left(1+\frac{\mu_T/\sigma_k}{\mu}\right)\frac{\partial}{\partial x_i^\dagger}\frac{\partial k^\dagger}{\partial x_i^\dagger}+\mathscr{P}^\dagger-\beta^*\frac{k^\dagger}{\tau^\dagger}
+
+.. math::
+
+  \frac{\partial\tau^\dagger}{\partial t^\dagger}+\overline{u_i}^\dagger\frac{\partial\tau^\dagger}{\partial x_i^\dagger}=\frac{1}{Re}\left(1+\frac{\mu_T/\sigma_\tau}{\mu}\right)\frac{\partial}{\partial x_i^\dagger}\frac{\partial\tau^\dagger}{\partial x_i^\dagger}-\alpha\frac{\tau^\dagger}{k^\dagger}\mathscr{P}^\dagger+\beta-\frac{2}{Re}\frac{1}{\tau^\dagger}\frac{\partial\tau^\dagger}{\partial x_i^\dagger}\frac{\partial\tau^\dagger}{\partial x_i^\dagger}
+
+Finally, the eddy viscosity is computed as
+
+.. math::
+
+  \mu_T=\rho k\tau
+
+which after inserting the non-dimensional variables becomes
+
+.. math::
+
+  \mu_T=\rho ULk^\dagger\tau^\dagger
+
+such that the non-dimensional eddy viscosity can be written as :math:`\mu_T^\dagger=k^\dagger\tau^\dagger`.
+Therefore, the overall diffusion coefficients in the mean momentum equation,
+mean energy equation, :math:`k` equation, and :math:`\tau` equation are, respectively
+
+.. math::
+
+  \frac{1}{Re}\left(1+\frac{\mu_T}{\mu}\right)\rightarrow\frac{1}{Re}+\mu_T^\dagger
+
+.. math::
+
+  \frac{1}{Pe}\left(k+\frac{\mu_T}{Pr_T}C_p\right)\rightarrow\frac{1}{Pe}+\frac{\mu_T^\dagger}{Pr_T}
+
+.. math::
+
+  \frac{1}{Re}\left(1+\frac{\mu_T/\sigma_k}{\mu}\right)\rightarrow\frac{1}{Re}+\frac{\mu_T^\dagger}{\sigma_k}
+
+.. math::
+
+  \frac{1}{Re}\left(1+\frac{\mu_T/\sigma_\tau}{\mu}\right)\rightarrow\frac{1}{Re}+\frac{\mu_T^\dagger}{\sigma_\tau}
+
