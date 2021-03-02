@@ -660,6 +660,18 @@ for the momentum and energy conservation equations, the input parameters should 
   * ``rhoCp``:math:`\rightarrow` :math:`\rho^\dagger C_p^\dagger\equiv\frac{\rho}{\rho_0}\frac{C_p}{C_{p,0}}`
   * ``conductivity``:math:`\rightarrow` :math:`\frac{1}{Pe}k^\dagger\equiv\frac{k_0}{\rho_0C_{p,0}UL}\frac{k}{k_0}`
 
+For the :math:`k` and :math:`\tau` equations, if present, the input parameters for
+*both* the :math:`k` equation should be specified as:
+
+  * ``rho``:math:`\rightarrow`:math:`1.0`
+  * ``diffusivity``:math:`\rightarrow`:math:`\frac{1}{Re}`
+
+Notice that these non-dimensional forms for the :math:`k` and :math:`\tau` equations
+are slightly simpler than the forms for the mean momentum and energy equations - this
+occurs because nekRS's :math:`k`-:math:`\tau` model is restricted to constant-property
+flows, so we do not need to consider :math:`\rho^\dagger\neq 1` or
+:math:`\mu^\dagger\neq 1`.
+
 If a volumetric heat source is present, it must also be specified in non-dimensional form
 as
 
@@ -688,6 +700,10 @@ Some of the more common boundary conditions and their non-dimensionalizations ar
     pressure boundary values by :math:`\rho_0U^2`
   * heat flux: :math:`q^\dagger=\frac{q}{\rho_0C_{p,0}U\Delta T}`, i.e. divide all
     dimensional heat flux boundary values by :math:`\rho_0C_{p,0}U\Delta T`
+  * turbulent kinetic energy: :math:`k^\dagger=\frac{k}{U^2}`, i.e. divide the dimensional
+    turbulent kinetic energy by :math:`U^2`
+  * inverse specific dissipation rate: :math:`\tau^\dagger=\frac{\tau}{L/U}`, i.e.
+    divide the dimensional inverse specific dissipation rate by :math:`L/U`
 
 If the Prandtl number is unity, then because :math:`Pe\equiv Re\ Pr`, the coefficient on the
 diffusion kernel in both the momentum and energy conservation equations will be the same

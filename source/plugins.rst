@@ -220,9 +220,16 @@ the temperature passive scalar equation to be
 
 .. math::
 
-  k+\frac{\mu_T}{Pr_T}
+  \frac{1}{Pe}+\frac{\mu_T^\dagger}{Pr_T}
 
-where :math:`k` is the laminar conductivity.
+where :math:`Pe` is the Peclet number. Note that this particular example applies to
+a non-dimensional case. As described at length in :ref:`The k-tau Model <ktau>`,
+a dimensional formulation of the :math:`k`-:math:`\tau` model would instead compute
+the diffusion coefficient in the temperature passive scalar equation as
+
+.. math::
+
+  k+\frac{\mu_T}{Pr_T}C_p
 
 Initialize the RANS Solve
 """""""""""""""""""""""""

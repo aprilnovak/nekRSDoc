@@ -226,6 +226,25 @@ model for the Reynolds stress tensor into the incompressible flow mean momentum 
 
   \rho\left(\frac{\partial\overline{u_i}}{\partial t}+\overline{u_j}\frac{\partial\overline{u_i}}{\partial x_j}\right)=-\frac{\partial \overline{P}}{\partial x_i}+\frac{\partial}{\partial x_j}\left\lbrack 2\left(\mu+\mu_T\right) \overline{S_{ij}}-\frac{2}{3}\rho k\delta_{ij}\right\rbrack+\rho\overline{\mathbf f}
 
+In nekRS, as well as many other :term:`RANS` codes, it is commonplace to combine
+the gradient of :math:`P+\frac{2}{3}\rho k` terms together into a single reduced pressure,
+
+.. math::
+
+  P_r\equiv\overline{P}+\frac{2}{3}\rho k
+
+such that the term proportional to :math:`\rho k` can be bundled into a single pressure gradient kernel,
+
+.. math::
+
+  -\frac{\partial\overline{P}}{\partial x_i}-\frac{\partial}{\partial x_j}\left(-\frac{2}{3}\rho k\delta_{ij}\right)\rightarrow-\frac{\partial P_r}{\partial x_i}
+
+.. warning::
+
+  The pressure solution, available on the ``nrs->P`` object and written to output under
+  the name "pressure," represents this *reduced* pressure. To obtain :math:`\overline{P}`,
+  you should subtract :math:`\frac{2}{3}\rho k` from ``nrs->P``.
+
 Turbulent Prandtl Number
 """"""""""""""""""""""""
 
@@ -259,6 +278,8 @@ mean energy equation then gives
 .. math::
 
   \rho C_p\left(\frac{\partial\overline{T}}{\partial t}+\overline{u_i}\frac{\partial\overline{T}}{\partial x_i}\right)=\frac{\partial}{\partial x_i}\left\lbrack\left(k+\frac{\mu_T}{Pr_T}C_p\right)\frac{\partial\overline{T}}{\partial x_i}\right\rbrack+\overline{\dot{q}}
+
+.. _ktau:
 
 The :math:`k`-:math:`\tau` Model
 """"""""""""""""""""""""""""""""
@@ -495,6 +516,21 @@ of either :math:`k` or :math:`\tau`,
   Even if the molecular viscosity is constant, you must set ``stressFormulation = true`` in
   the input file because the total viscosity (molecular plus turbulent) will not be constant.
 
+**Boundary Conditions**
+
+On walls, because the asymptotic behavior of :math:`\omega` is :math:`\omega\propto y^{-2}`
+as :math:`y\rightarrow0`, and because the instantaneous velocity
+:math:`u_i\equiv \overline{u_i}+u_i'` must be zero due to the no-slip condition, both
+:math:`k` and :math:`\tau` should be set to zero on no-slip boundaries.
+
+On turbulent inlets, however, both :math:`k` and :math:`\tau` are generally nonzero.
+While periodic flow cases obviate the need to specify these boundary conditions explicitly
+*a priori* to the simulation, reasonable estimates for :math:`k` and :math:`\tau` are
+required on non-periodic inlets.
+
+Finally, on outlets, "free-stream" boundary conditions are usually applied to
+:math:`k` and :math:`\tau`.
+
 **Non-Dimensional Formulation**
 
 Now that the :math:`k`-:math:`\tau` model has been presented in its full form,
@@ -536,7 +572,7 @@ Inserting these non-dimensional variables into the energy conservation equation 
 
 .. math::
 
-  \frac{\partial \overline{T}^\dagger}{\partial t^\dagger}+\overline{u_i}^\dagger\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}=\frac{1}{Pe}\left(1+\frac{\mu_T/Pr_T}{k}\rho C_p\right)\frac{\partial}{\partial x_i^\dagger}\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}+\dot{q}^\dagger
+  \frac{\partial \overline{T}^\dagger}{\partial t^\dagger}+\overline{u_i}^\dagger\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}=\frac{1}{Pe}\left(1+\frac{\mu_T/Pr_T}{k}C_p\right)\frac{\partial}{\partial x_i^\dagger}\frac{\partial \overline{T}^\dagger}{\partial x_i^\dagger}+\dot{q}^\dagger
 
 To non-dimensionalize the :math:`k` and :math:`\tau` equations,
 define :math:`\mathscr{P}^\dagger=\frac{\mathscr{P}}{\rho U^3/L}`
@@ -574,7 +610,7 @@ mean energy equation, :math:`k` equation, and :math:`\tau` equation are, respect
 
 .. math::
 
-  \frac{1}{Pe}\left(k+\frac{\mu_T}{Pr_T}C_p\right)\rightarrow\frac{1}{Pe}+\frac{\mu_T^\dagger}{Pr_T}
+  \frac{1}{Pe}\left(1+\frac{\mu_T/Pr_T}{k}C_p\right)\rightarrow\frac{1}{Pe}+\frac{\mu_T^\dagger}{Pr_T}
 
 .. math::
 
