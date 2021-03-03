@@ -569,7 +569,59 @@ scales as [Russo]_:
   I_\text{area}=\begin{cases}0.140Re^{-0.0790} & \text{incompressible}\\
   0.227Re^{-0.1} & \text{compressible}\end{cases}
 
-Either of these relationships, or simply a fixed turbulent intensity of, say, 5%,
+Similar correlations have also been developed for rough pipes [Basse]_. It is
+also commonplace to apply conditions on :math:`k` in terms of the friction
+velocity :math:`u_\tau`, defined as
+
+.. math::
+
+  u_\tau\equiv\sqrt{\frac{\tau_w}{\rho}}
+
+where :math:`\tau_w` is the wall shear stress. The wall shear stress can then be
+estimated using a friction factor correlation for :math:`f_D`, the Darcy friction factor,
+which is defined as
+
+.. math::
+
+  \frac{\Delta P}{l}\equiv f_D\frac{1}{D}\frac{\rho \overline{u_j}\overline{u_j}}{2}
+
+where :math:`\Delta P/l` is a pressure gradient and :math:`D` is a hydraulic diameter.
+For circular pipes, the friction factor is related to :math:`\tau_w` as
+
+.. math::
+
+  f_D=8\frac{\tau_w}{\rho\overline{u_j}\overline{u_j}}
+
+Typically, a simple friction factor correlation such as the Blasius model for pipes,
+is selected
+
+.. math::
+
+  f_D=0.316Re^{-0.25}
+
+Combining :math:`u_\tau`, :math:`f_D`, and one of the previous estimates for :math:`I_\text{area}`,
+such as :math:`I_\text{area}=0.317Re^{-0.11}` [Basse]_ gives the following relationship between
+:math:`I_\text{area}` and :math:`f_D`,
+
+.. math::
+
+  I_\text{area}=0.526f_D^{0.44}
+
+Then, inserting the relationship between :math:`u_\tau` and :math:`f_D` gives,
+after some manipulation,
+
+.. math::
+
+  k=2.56 u_\tau^2\left(\overline{u_j}\ \overline{u_j}\right)^{0.24}
+
+While this algebraic exercise hasn't actually introduced any new information or closures
+beyond what has already been discussed, it is information to see :math:`k` expressed
+in terms of the friction velocity, because some nekRS inputs set :math:`k` on inlets
+by first computing the :math:`u_\tau` from a friction correlation and then using an
+expression similar to above.
+
+In any case, one of these correlations for turbulent intensity,
+or simply a fixed turbulent intensity of, say, 5%,
 can be used to prescribe a uniform value of :math:`k` on an inlet. However, including
 some spatial variation in :math:`k` on the inlet may reduce Gibbs phenomena if
 the inlet turbulent intensity enforces the physical zero wall value. Spatial fits,
