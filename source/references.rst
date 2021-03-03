@@ -15,4 +15,7 @@ References
 .. [Launder] Launder, B.E. and Spalding, D.B. "The Numerical Computation of Turbulent Flows,"
     *Computer Methods in Applied Mechanics and Engineering* **3** 269-289 (1974)
 
+.. [Russo] Russo, F. and Basse, N.T. "Scaling of Turbulence Intensity for Low-Speed FLow in Smooth Pipes,"
+    *Flow Measurement and Instrumentation* **52** 101-114 (2016)
+
 .. [Wilcox] Wilcox, D.C. "Turbulence Modeling for CFD," *DCW Industries* (2006)

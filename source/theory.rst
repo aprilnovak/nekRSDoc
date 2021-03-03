@@ -523,10 +523,58 @@ as :math:`y\rightarrow0`, and because the instantaneous velocity
 :math:`u_i\equiv \overline{u_i}+u_i'` must be zero due to the no-slip condition, both
 :math:`k` and :math:`\tau` should be set to zero on no-slip boundaries.
 
-On turbulent inlets, however, both :math:`k` and :math:`\tau` are generally nonzero.
-While periodic flow cases obviate the need to specify these boundary conditions explicitly
-*a priori* to the simulation, reasonable estimates for :math:`k` and :math:`\tau` are
-required on non-periodic inlets.
+On turbulent inlets, however, both :math:`k` and :math:`\tau` are generally nonzero, and
+estimates for :math:`k` and :math:`\tau` must be provided. Turbulent inflow conditions are
+usually unknown unless the modeler is fortunate enough to have experimental data - therefore,
+the specification of inlet conditions on :math:`k` and :math:`\tau` tends to be fairly ad hoc.
+An inlet condition for :math:`k` can be estimated by prescribing the turbulent intensity at
+the inlet. The turbulent intensity :math:`I` is defined as the root mean square
+fluctuating velocity normalized by the magnitude of the mean velocity, or
+
+.. math::
+
+  I\equiv\frac{\sqrt{\frac{1}{3}\left(u_i'u_i'\right)}}{\sqrt{\overline{u_j}\ \overline{u_j}}}
+
+which can equivalently be written in terms of the turbulent kinetic energy as
+
+.. math::
+
+  I\equiv\frac{\sqrt{\frac{2}{3}k}}{\sqrt{\overline{u_j}\ \overline{u_j}}}
+
+Therefore, if an inlet turbulent intensity can be prescribed, the inlet
+turbulent kinetic energy is
+
+.. math::
+
+  k\equiv\frac{3}{2}I^2\overline{u_j}\ \overline{u_j}
+
+For instance, it is common to assume a uniform turbulent intensity over an inlet of
+between 1 and 5% for pipe flows [Russo]_. Experiments have also quantified the scaling
+of turbulent intensity with Reynolds number.
+From simulations and experiments of both incompressible
+and compressible flows, the turbulent intensities
+on the axis of a smooth circular pipe are [Russo]_:
+
+.. math::
+
+  I_\text{axis}=\begin{cases}0.0853Re^{-0.0727} & \text{incompressible}\\
+  0.0550Re^{-0.0407} & \text{compressible}\end{cases}
+
+With a slightly different definition based on the turbulent intensity averaged over
+the cross-sectional area of a circular pipe, the turbulent intensity instead
+scales as [Russo]_:
+
+.. math::
+
+  I_\text{area}=\begin{cases}0.140Re^{-0.0790} & \text{incompressible}\\
+  0.227Re^{-0.1} & \text{compressible}\end{cases}
+
+Either of these relationships, or simply a fixed turbulent intensity of, say, 5%,
+can be used to prescribe a uniform value of :math:`k` on an inlet. However, including
+some spatial variation in :math:`k` on the inlet may reduce Gibbs phenomena if
+the inlet turbulent intensity enforces the physical zero wall value. Spatial fits,
+such as those developed for circular pipes [Russo]_, may improve the numerical stability
+and accuracy of your simulation.
 
 Finally, on outlets, "free-stream" boundary conditions are usually applied to
 :math:`k` and :math:`\tau`.
