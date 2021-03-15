@@ -38,13 +38,10 @@ the use case, it may be advantageous to force the precompilation separately from
 To precompile the case, use the ``nrspre`` script. See the
 :ref:`Scripts That Ship with nekRS <nekrs_scripts>` section for where to find this script.
 
-As an example, to precompile a case with name ``my_case`` and do a dry run
-with 4 processes, the ``nrspre`` script would be used as follows. After the precompilation,
+As an example, to precompile a case with name ``my_case`` for a later run with less than
+or equal to 4 GPUs, the ``nrspre`` script would be used as follows. After the precompilation,
 run as normal with the ``nrsmpi`` script, which then skips the precompilation step since
-the case has already been compiled. Precompiling with a certain number of process does
-*not* preclude you from running with a different number of processes later - the number of
-processes specified for the ``nrspre`` script is only used to perform a dry run of the
-solution setup.
+the case has already been compiled.
 
 .. code-block::
 

@@ -46,7 +46,7 @@ their usage is as follows.
   processes for the case files that are prefixed with ``casename``.
 * ``nrsbmpi <casename> <processes>``: same as ``nrsmpi``, except that nekRS runs
   in the background
-* ``nrspre <casename> <processes>``: precompile nekRS case (see
+* ``nrspre <casename> <target GPUs>``: precompile nekRS case (see
   :ref:`Just-in-time Compilation <just_in_time_compilation>`)
 * ``nrsqsub_lassen <casename> <nodes> <wall time>``: submission script for
   `<Lassen https://computing.llnl.gov/computers/lassen>`__, a supercomputer
