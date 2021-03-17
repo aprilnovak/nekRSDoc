@@ -25,11 +25,20 @@ and run the makefile to compile all the scripts.
 
 .. code-block::
 
-  user$ cd build/_deps/nek5000_content-src/tools
+  user$ cd nekRS/build/_deps/nek5000_content-src/tools
   user$ ./maketools all
 
-This should create binary executables in the ``build/_deps/nek5000_content-src/tools/bin``
+This should create binary executables in the ``nekRS/build/_deps/nek5000_content-src/tools/bin``
 directory. You may want to add this to your path in order to quickly access those scripts.
+
+Alternatively, if you have cloned the :term:`Nek5000` repository separately (this is not needed for nekRS), the tools in this repository are the same as those pulled in by nekRS. If you build the tools in the Nek5000 repository, you can use them equivalently:
+
+.. code-block::
+
+  user$ cd Nek5000/tools
+  user$ ./maketools all
+
+This should create binary executables in the ``Nek5000/bin`` directory.
 
 .. _nekrs_scripts:
 
