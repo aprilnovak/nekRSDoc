@@ -89,12 +89,10 @@ To convert from an Exodus format mesh
 
   user$ exo2nek
 
-  Input (.exo) file name:
-  my_mesh
-
-While the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek`` script
+Then, follow the on-screen prompts associated with the ``exo2nek`` script.
+Note that while the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek`` script
 is currently limited to HEX20 elements. Therefore, all Exodus format meshes must be
-generated with HEX20 elements. 
+generated with HEX20 elements.
 
 Converting a Gmsh mesh
 """"""""""""""""""""""
@@ -868,6 +866,23 @@ This will write three output files, which contain the following.
 * ``fl1case0.f<time_step>`` contains ``o_field1``, but named ``pressure``
 * ``fl2case0.f<time_step>`` contains ``o_field2``, but named ``pressure``
 * ``fl3case0.f<time_step>`` contains ``o_field3``, but named ``pressure``
+
+Visualizing Output Files
+------------------------
+
+nekRS output files all have the form ``<case0>.fld<n>``, where ``<case>`` is the case
+name and ``<n>`` is a five-digit number indicating the number of the output file (each output
+file represents a single time step that is output according to the settings for
+``writeControl`` and ``writeInterval`` in the ``.par`` file). These output files are in a custom
+binary format that requires an additional postprocessing step in order to visualize in Paraview.
+In the directory where the case files are located, run the ``visnek`` script:
+
+.. code-block::
+
+  user$ visnek case
+
+which will create a ``case.nek5000`` file that is viewable in Paraview. See
+:ref:`Building the Nek5000 Tool Scripts <scripts>` for instructions on compiling the ``visnek`` program.
 
 .. rubric:: Footnotes
 
