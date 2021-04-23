@@ -143,8 +143,12 @@ solution order, and file writing control.
 **startFrom** *<string>*
   Absolute or relative path to a nekRS output file from which to start the simulation from.
   If the solution in the restart file was obtained with a different polynomial order,
-  interpolation is performed to the current simulation settings. If this is omitted, the
-  simulation is assumed to start based on the user-defined initial conditions at time zero.
+  interpolation is performed to the current simulation settings. To only read select fields
+  from the restart file (such as if you wanted to only apply the temperature solution from the
+  restart file to the present simulation), append `+U` (to read velocity), `+P` (to read pressure),
+  or `+T` (to read temperature) to the end of the restart file name. For instance, if the restart
+  file is named `restart.fld`, using `restart.fld+T` will only read the temperature solution.
+  If `startFrom` is omitted, the simulation is assumed to start based on the user-defined initial conditions at time zero.
 
 **stopAt** *(numSteps), elapsedTime, endTime*
   When to stop the simulation, either based on a number of time steps *numSteps* or a simulated
