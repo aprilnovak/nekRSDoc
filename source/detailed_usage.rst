@@ -330,11 +330,6 @@ of the solution itself) are also applied on the device. The types of boundary co
 on each solution field are specified in the ``.par`` file with the ``boundaryTypeMap``
 key. 
 
-.. _custom_sources:
-
-Setting Custom Source Terms
----------------------------
-
 .. _custom_properties:
 
 Setting Custom Properties
@@ -636,6 +631,106 @@ more complex ``viscosity`` kernel. Here, we need to pass in the scalar :math:`\p
   }
 
 The final kernel that wraps up this example is the ``heatCapacity`` kernel.
+
+.. _custom_sources:
+
+Setting Custom Source Terms
+---------------------------
+
+Custom source terms can be added to the momentum conservation equation and/or the
+energy conservation equation by assigning the ``udf.uEqnSource`` and
+``udf.sEqnSource`` function pointers, respectively, to functions with the appropriate signature.
+Each of these cases are described separately next. The process is conceptually very similar
+to the process for declaring custom properties in :ref:`Setting Custom Properties <custom_properties>`,
+so you may find it useful to first review that section.
+
+The Momentum Equation
+^^^^^^^^^^^^^^^^^^^^^
+
+To set a custom source term for the momentum equation, you must assign the
+``udf.uEqnSource`` function pointer to a function with a signature that takes the ``nrs`` pointer
+to the nekRS solution object, the simulation time ``time``, the velocity solution on the device
+``o_U``, and the momentum source term on the device ``o_FU``. In ``UDF_Setup``,
+we need to assign an address to the ``udf.uEqnSource`` function pointer to a function
+with the correct signature where we will eventually compute a momentum source. Our
+``UDF_Setup`` function would be as follows.
+
+.. code-block:: cpp
+
+  void UDF_Setup(nrs_t * nrs)
+  {
+    udf.uEqnSource = &custom_source;
+  }
+
+Here, ``custom_source`` is our name for a function in the ``.udf`` file that computes the
+momentum source. Its name is arbitrary, but it must have the following signature.
+
+.. code-block:: cpp
+
+  void custom_source(nrs_t * nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
+  {
+    // compute the momentum source
+  }
+
+.. note::
+
+  You must place the ``custom_source`` function _before_ ``UDF_Setup`` (and before any other
+  function that uses ``custom_source``) in the ``.udf`` file in order for the just-in-time
+  compilation to success.
+
+Suppose we would like to add a gravitational force to the :math:`z` momentum equation, of form
+:math:`-\rho_fg`. For the momentum equation, the source term is defined on a
+per-mass basis; in other words, we must provide the vector :math:`\vec{f}` for a source with
+strong form :math:`\rho\vec{f}`. Our custom source function would be as follows.
+
+.. code-block:: cpp
+
+  // declare all kernels we will be writing
+  static occa::kernel constantFillKernel;
+
+  void custom_source(nrs_t * nrs, dfloat time, occa::memory o_U, occa::memory o_FU)
+  {
+    mesh_t * mesh = nrs->mesh;
+
+    // what momentum equation we want to add gravity to
+    int component = 2;
+
+    constantFillKernel(nrs->mesh->Nelements, -9.81, component * nrs->fieldOffset, o_FU);
+  }
+
+The ``constantFillKernel`` is a user-defined device kernel. This function must now be defined
+in the ``.oudf`` file; the name is arbitrary. In order to link against our device kernels, we must
+also instruct nekRS to use its just-in-time compilation to build those kernels. We do this in
+``UDF_LoadKernels`` by calling the ``udfBuildKernel`` function for the kernel. The second argument
+to the ``udfBuildKernel`` function is the name of the kernel, which appears as the actual function
+name of the desired kernel in the ``.oudf`` file.
+
+.. code-block:: cpp
+
+  void UDF_LoadKernels(nrs_t * nrs)
+  {
+    constantFillKernel = udfBuildKernel(nrs, "constantFill");
+  }
+
+The ``constantFill`` kernel is now defined in the ``.oudf`` file as follows.
+
+.. code-block:: cpp
+
+  @kernel void constantFill(const dlong Nelements, const dfloat value,
+    const int offset, @restrict dfloat * source)
+  {
+    for (dlong e = 0; e < Nelements; ++e ; @outer(0))
+    {
+      for (int n = 0; n < p_Np; ++n ; @inner(0))
+      {
+        const int id = e * p_Np + n + offset;
+        source[id] = value;
+      }
+    }
+  }
+
+The Energy Equation
+^^^^^^^^^^^^^^^^^^^
 
 .. _nondimensional:
 

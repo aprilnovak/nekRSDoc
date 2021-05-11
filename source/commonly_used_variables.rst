@@ -97,29 +97,31 @@ explicitly shows the ``o_`` prefix to differentiate that this member is not avai
 on the host. For instance, the ``o_mue`` member is only available on the device - there is no
 corresponding array ``nrs->mue`` member.
 
-================== ============================ ================== ======================================================================================================
-Variable Name      Size                         Device?            Meaning
-================== ============================ ================== ======================================================================================================
-``cds``            1                                               convection-diffusion solution object
-``cht``            1                                               whether the problem contains conjugate heat transfer
-``dim``            1                                               spatial dimension of ``nrs->mesh``
-``dt``             3                                               time step for previous 3 time steps
-``fieldOffset``    1                                               offset in flow solution arrays to access new component
-``isOutputStep``   1                                               if an output file is written on this time step
-``lastStep``       1                                               if this time step is the last time step of the run
-``mesh``           1                                               mesh used for the flow simulation
-``NiterU``         1                                               number of iterations taken in last velocity solve
-``NiterP``         1                                               number of iterations taken in last pressure solve
-``Nlocal``         1                                               number of quadrature points local to this process
-``Nscalar``        1                                               number of passive scalars to solve for
-``NTfields``       1                                               number of flow-related fields to solve for (:math:`\vec{V}` plus :math:`T`)
-``NVfields``       1                                               number of velocity fields to solve for
-``o_mue``          ``fieldOffset``              :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) for the momentum equation
-``options``        1                                               object containing user settings from ``.par`` file
-``o_rho``          ``fieldOffset``              :math:`\checkmark` density for the momentum equation
-``P``              ``fieldOffset``              :math:`\checkmark` pressure solution for most recent time step
-``prop``           ``2 * fieldOffset``          :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) and density (in this order) for the momentum equation
-``U``              ``NVfields * fieldOffset``   :math:`\checkmark` velocity solution for all components for most recent time step
+================== ================================= ================== ======================================================================================================
+Variable Name      Size                              Device?            Meaning
+================== ================================= ================== ======================================================================================================
+``cds``            1                                                    convection-diffusion solution object
+``cht``            1                                                    whether the problem contains conjugate heat transfer
+``dim``            1                                                    spatial dimension of ``nrs->mesh``
+``dt``             3                                                    time step for previous 3 time steps
+``fieldOffset``    1                                                    offset in flow solution arrays to access new component
+``FU``             ``NVfields * nEXT * fieldOffset`` :math:`\checkmark` source term for each momentum equation for each step in the time stencil
+``isOutputStep``   1                                                    if an output file is written on this time step
+``lastStep``       1                                                    if this time step is the last time step of the run
+``mesh``           1                                                    mesh used for the flow simulation
+``nEXT``           1                                                    number of time steps in the time derivative stencil
+``NiterU``         1                                                    number of iterations taken in last velocity solve
+``NiterP``         1                                                    number of iterations taken in last pressure solve
+``Nlocal``         1                                                    number of quadrature points local to this process
+``Nscalar``        1                                                    number of passive scalars to solve for
+``NTfields``       1                                                    number of flow-related fields to solve for (:math:`\vec{V}` plus :math:`T`)
+``NVfields``       1                                                    number of velocity fields to solve for
+``o_mue``          ``fieldOffset``                   :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) for the momentum equation
+``options``        1                                                    object containing user settings from ``.par`` file
+``o_rho``          ``fieldOffset``                   :math:`\checkmark` density for the momentum equation
+``P``              ``fieldOffset``                   :math:`\checkmark` pressure solution for most recent time step
+``prop``           ``2 * fieldOffset``               :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) and density (in this order) for the momentum equation
+``U``              ``NVfields * fieldOffset``        :math:`\checkmark` velocity solution for all components for most recent time step
 ================== ============================ ================== ======================================================================================================
 
 Passive Scalar Solution Fields and Simulation Settings
