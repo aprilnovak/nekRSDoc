@@ -313,16 +313,19 @@ and ``SCALARXX`` sections, this block is used for higher-level control of the fo
 of those equations themselves.
 
 **equation** *stokes*
-  Whether to omit the advection term in the conservation of momentum equation, therefore
-  solving for the Stokes equations.
 
-**stressFormulation** *(false), true*
-  Whether the viscosity (molecular plus turbulent) is not constant, therefore requiring
-  use of the full form of the viscous stress tensor :math:`\tau`. By setting ``stressFormulation = false``,
-  :math:`\nabla\cdot\tau` is represented as :math:`\nabla\cdot\tau=\mu\nabla^2\mathbf u`.
-  Even if the molecular viscosity is constant, this parameter must be set to ``true``
-  when using a :term:`RANS` model because the turbulent viscosity portion of the overall
-  viscosity is not constant.
+Whether to omit the advection term in the conservation of momentum equation, therefore
+solving for the Stokes equations. If ``equation = stokes``, then
+[``ADVECTION``] is set to false.
+
+**stressFormulation** *(false), true* [``STRESSFORMULATION``]
+
+Whether the viscosity (molecular plus turbulent) is not constant, therefore requiring
+use of the full form of the viscous stress tensor :math:`\tau`. By setting ``stressFormulation = false``,
+:math:`\nabla\cdot\tau` is represented as :math:`\nabla\cdot\tau=\mu\nabla^2\mathbf u`.
+Even if the molecular viscosity is constant, this parameter must be set to ``true``
+when using a :term:`RANS` model because the turbulent viscosity portion of the overall
+viscosity is not constant.
 
 ``SCALARXX`` section
 ^^^^^^^^^^^^^^^^^^^^
