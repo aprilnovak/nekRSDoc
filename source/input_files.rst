@@ -52,7 +52,7 @@ follows, where ``FOO`` and ``BAR`` are both section names, with a number of (key
   [BAR]
     alpha = beta
 
-The valid sections for setting up a nekRS simulation are
+The valid sections for setting up a nekRS simulation are:
 
 * ``BOOMERAMG``: settings for the (optional) :term:`AMG` solver
 * ``GENERAL``: generic settings for the simulation
@@ -63,12 +63,45 @@ The valid sections for setting up a nekRS simulation are
 * ``TEMPERATURE``: settings for the temperature solution
 * ``VELOCITY``: settings for the velocity solution
 
-Each of the keys and value types are now described for these sections. Default settings
-are shown in parentheses. Note that nekRS currently does not have any checking on valid
-input parameters in the ``.par`` file (though this will be added in the future) - please
-be sure that you type these (key, value) pairs correctly. nekRS also does not have a
-method to register all valid keys, so this user guide may quickly become out of date
-unless developers are careful to keep the keys listed here up to date.
+Each of the keys and value types are now described for these sections. The
+formatting used here to describe valid key, value combinations is as follows.
+For character-type values, take the ``backend`` key in the ``OCCA`` section
+as an example:
+
+**backend** *(CUDA), CPU, HIP, OPENCL, OPENMP, SERIAL* [``THREAD MODEL``]
+
+Here, ``backend`` is the key, and ``CUDA``, ``CPU``, ``HIP``, ``OPENCL``, ``OPENMP``,
+and ``SERIAL`` are all valid values. Defaults are indicated in parentheses - therefore,
+if you do not explicitly give the ``backend`` key, value pair in the ``.par`` file,
+the :term:`CUDA` backend is used.
+
+The values associated with the various keys in the ``.par`` file are read by nekRS
+and then saved to various arguments in the ``options`` data structure. Here,
+the value set by the ``backend`` key is stored in the ``THREAD MODEL`` argument.
+In other words, if you wanted to grab the value set by the user for the
+``backend`` key, and save it in a local variable named ``user_occa_backend``,
+you can use the ``getArgs`` function on the ``options`` data structure as follows.
+
+.. code-block::
+
+  std::string user_occa_backend;
+  options.getArgs("THREAD MODEL", user_occa_backend);
+
+In other words, if you have ``backend = CUDA`` in the ``.par`` file, then
+``user_occa_backend`` would be set to ``CUDA`` in the above code. Generally,
+nekRS does not save the user settings to a data structure, so throughout the code
+base, whenever information from the ``.par`` file is needed, it is simply
+extracted on-the-fly via the ``options`` structure. Not all values are saved
+directly in an argument to the ``options`` data structure, but those that are saved
+are shown in square brackets, like [``ARGUMENT NAME``].
+
+.. warning::
+
+  nekRS currently does not have any checking on valid
+  input parameters in the ``.par`` file (though this will be added in the future) - please
+  be sure that you type these (key, value) pairs correctly. nekRS also does not have a
+  method to register all valid keys, so this user guide may quickly become out of date
+  unless developers are careful to keep the keys listed here up to date.
 
 nekRS uses just-in-time compilation to allow the incorporation of user-defined functions
 into program execution. These functions can be written to allow ultimate flexibility on
@@ -105,97 +138,145 @@ of nekRS.
 This section is used to describe generic settings for the simulation such as time steppers,
 solution order, and file writing control.
 
-**cubaturePolynomialOrder** *<int>*
-  Polynomial order for the cubature. If not specified, this defaults to the integer
-  closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
-  order.
+**cubaturePolynomialOrder** *<int>* [``CUBATURE POLYNOMIAL DEGREE``]
+
+Polynomial order for the cubature. If not specified, this defaults to the integer
+closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
+order.
 
 .. TODO: need better description of what cubature is
 
-**dealiasing** *<bool>*
+**dealiasing** *(true), false*
 
-**dt** *<double>*
-  Time step size
+If dealiasing is turned on, [``ADVECTION TYPE``] is set to ``CUBATURE+CONVECTIVE``,
+whereas if dealiasing is turned off, [``ADVECTION TYPE``] is set to ``CUBATURE``.
 
-**elapsedTime** *<double>*
-  Elapsed time at which to end the simulation, if using ``stopAt = elapsedTime``
+.. TODO: need better description of what dealiasing is
 
-**endTime** *<double>*
-  Final time at which to end the simulation, if using ``stopAt = endTime``
+**dt** *<double>* [``DT``]
 
-**extrapolation** *oifs, subcycling*
+Time step size
+
+**elapsedTime** *<double>* [``STOP AT ELAPSED TIME``]
+
+Elapsed time at which to end the simulation, if using ``stopAt = elapsedTime``.
+
+**endTime** *<double>* [``END TIME``]
+
+Final time at which to end the simulation, if using ``stopAt = endTime``.
+
+**extrapolation** *subCycling*
+
+.. TODO: need better description of what extrapolation is
 
 **filterCutoffRatio** *<double>*
 
-**filtering** *(none), explicit, hpfrtm*
+.. TODO: need better description of what filter cutoff ratio is
 
-**filterModes** *<int>*
+**filtering** *hpfrt*
 
-**filterWeight** *<double>*
+If ``filtering = hpfrt``, [``FILTER STABILIZATION``] is set to ``RELAXATION``,
+and ``filterWeight`` must be specified. If ``filtering`` is not specified,
+[``FILTER STABILIZATION``] is set to ``NONE`` by default.
 
-**numSteps** *<int>*
-  Number of time steps to perform, if using ``stopAt = numSteps``
+.. TODO: need better description of what filtering is
 
-**polynomialOrder** *<int>*
-  Polynomial order for the spectral element solution. An order of :math:`N` will result
-  in :math:`N+1` basis functions for each spatial dimension.
+**filterModes** *<int>* [``HPFRT MODES``]
 
-**startFrom** *<string>*
-  Absolute or relative path to a nekRS output file from which to start the simulation from.
-  If the solution in the restart file was obtained with a different polynomial order,
-  interpolation is performed to the current simulation settings. To only read select fields
-  from the restart file (such as if you wanted to only apply the temperature solution from the
-  restart file to the present simulation), append ``+U`` (to read velocity), ``+P`` (to read pressure),
-  or ``+T`` (to read temperature) to the end of the restart file name. For instance, if the restart
-  file is named ``restart.fld``, using ``restart.fld+T`` will only read the temperature solution.
-  If ``startFrom`` is omitted, the simulation is assumed to start based on the user-defined initial conditions at time zero.
+Number of filter modes; minimum value is 1. If not specified, the number of modes
+is set by default to the nearest integer to :math:`(N+1)(1-f_c)`, where :math:`f_c`
+is the filter cutoff ratio.
+
+.. TODO: need better description of what filter modes is
+
+**filterWeight** *<double>* [``HPFRT STRENGTH``]
+
+.. TODO: need better description of what filter weight is
+
+**numSteps** *(0), <int>* [``NUMBER TIMESTEPS``]
+
+Number of time steps to perform, if using ``stopAt = numSteps``. By default, if not
+specified, then it is assumed that no time steps are performed.
+
+**polynomialOrder** *<int>* [``POLYNOMIAL DEGREE``]
+
+Polynomial order for the spectral element solution. An order of :math:`N` will result
+in :math:`N+1` basis functions for each spatial dimension. The polynomial order is
+currently limited to :math:`N < 10`.
+
+**startFrom** *<string>* [``RESTART FILE NAME``]
+
+Absolute or relative path to a nekRS output file from which to start the simulation from.
+When used, the [``RESTART FROM FILE``] option argument is also set to true.
+If the solution in the restart file was obtained with a different polynomial order,
+interpolation is performed to the current simulation settings. To only read select fields
+from the restart file (such as if you wanted to only apply the temperature solution from the
+restart file to the present simulation), append ``+U`` (to read velocity), ``+P`` (to read pressure),
+or ``+T`` (to read temperature) to the end of the restart file name. For instance, if the restart
+file is named ``restart.fld``, using ``restart.fld+T`` will only read the temperature solution.
+If ``startFrom`` is omitted, the simulation is assumed to start based on the user-defined initial conditions at time zero.
 
 **stopAt** *(numSteps), elapsedTime, endTime*
-  When to stop the simulation, either based on a number of time steps *numSteps* or a simulated
-  end time *endTime*
 
-**subcyclingOrder** *<int>*
+When to stop the simulation, either based on a number of time steps *numSteps*, a simulated
+end time *endTime*, or a total elapsed wall time *elapsedTime*. If ``stopAt = numSteps``,
+the ``numSteps`` parameter must be provided. If ``stopAt = endTime``, the ``endTime``
+parameter must be provided. If ``stopAt = elapsedTime``, the ``elapsedTime`` parameter
+must be provided.
 
-**subCyclingSteps** *<int>*
-  Number of subcycling steps, if using either ``extrapolation = oifs`` or ``extrapolation = subcycling``.
-  If ``targetCFL`` is specified, then by default this parameter is set to the integer nearest to
-  half the target :term:`CFL`. Any values less than unity such as through the integer rounding process
-  are adjusted back to a minimum number of steps of unity.
+**subCyclingSteps** *(0), <int>* [``SUBCYCLING STEPS``]
+
+Number of subcycling steps; if ``extrapolation`` is not specified, then by default
+the number of subcycling steps is zero. Otherwise, if ``extrapolation`` is specified,
+there are two possible defaults (both of which would be overridden by setting
+``subCyclingSteps`` directly) - if ``targetCFL`` is not specified, the default number of subcycling
+steps is set to 1; otherwise, the default number of subcycling steps is taken as
+the integer nearest to half the target :term:`CFL` as given by
+the ``targetCFL`` parameter.
 
 .. TODO: better description of what subcycling is
 
 **targetCFL** *<double>*
-  The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``, or
-  when using extrapolation when ``extrapolation`` equals either ``oifs`` or ``subcycling``.
 
-**timeStepper** *bdf1, bdf2, bdf3, tombo1, tombo2, tombo3*
-  The method to use for time stepping. Note that
-  if you select any of the :term:`BDF` options, the time integrator is internally set to
-  the :term:`TOMBO` time integrator of equivalent order.
+The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``
+(not currently enabled). When using extrapolation, the target :term:`CFL` is also used to
+set a default for the ``subCyclingSteps``; so while this parameter does not currently set
+a target :term:`CFL` by adaptively changing the time step, it is used in some cases to set
+the default number of subcycling steps.
 
-**variableDT** *<bool>*
-  Whether to enable a variable time step size based on the :term:`CFL<CFL>` condition.
-  At the moment, nekRS only allows a fixed
-  time step size, so this parameter is unused.
+**timeStepper** *(tombo2), bdf1, bdf2, bdf3, tombo1, tombo3* [``TIME INTEGRATOR``]
 
-**verbose** *<bool>*
+The method to use for time stepping. Note that
+if you select any of the :term:`BDF` options, the time integrator is internally set to
+the :term:`TOMBO` time integrator of equivalent order.
 
-**writeControl** *(timeStep), runTime*
-  Method to use for the writing of output files, either based on a time step interval with
-  *timeStep* or a simulated time interval with *runTime*
+**verbose** *(false), true* [``VERBOSE``]
 
-**writeInterval** *<double>*
-  Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
-  in units of simulation time for ``writeControl = runTime``. If a runtime step control is
-  used that does not perfectly align with the time steps of the simulation, nekRS will write
-  an output file on the timestep that most closely matches the desired write interval.
+Whether to print the simulation results in verbose format to the screen.
+
+**writeControl** *(timeStep), runTime* [``SOLUTION OUTPUT COTROL``]
+
+Method to use for the writing of output files, either based on a time step interval with
+*timeStep* (in which case ``SOLUTION OUTPUT CONTROL`` is set to ``STEPS``)
+or a simulated time interval with *runTime* (in which case ``SOLUTION OUTPUT CONTROL``
+is set to ``RUNTIME``).
+
+**writeInterval** *<double>* [``SOLUTION OUTPUT INTERVAL``]
+
+Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
+in units of simulation time for ``writeControl = runTime``. If a runtime step control is
+used that does not perfectly align with the time steps of the simulation, nekRS will write
+an output file on the timestep that most closely matches the desired write interval.
 
 ``OCCA`` section
 ^^^^^^^^^^^^^^^^
 
-**backend** *CUDA*
+**backend** *(CUDA), CPU, HIP, OPENCL, OPENMP, SERIAL* [``THREAD MODEL``]
 
-**deviceNumber** *LOCAL-RANK*
+OCCA backend; ``CPU`` is the same as ``SERIAL``, and means that parallelism is achieved with
+:term:`MPI`.
+
+**deviceNumber** *(LOCAL-RANK), <int>* [``DEVICE NUMBER``]
 
 ``PRESSURE`` section
 ^^^^^^^^^^^^^^^^^^^^

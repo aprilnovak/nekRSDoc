@@ -922,6 +922,11 @@ output file).
      writeFld("usr", time, coords, FP64, &o_Uavg, &o_rst, &o_yPlus, Nscalar);
    }
 
+.. warning::
+
+  ``writeFld`` can only write data of type ``dfloat``. So, if you want to write an
+  integer field to a field, you must first convert that data to ``dfloat``.
+
 nekRS's output system does not have any means by which to understand *what* these fields
 represent. Therefore, the names of these fields in the output file will be ``velocity``,
 ``pressure``, and ``temperature``, even if those names have no relationship to what is
