@@ -2,6 +2,9 @@ Glossary
 ========
 
 .. glossary::
+    ALE
+      Arbitrary Lagrange Eulerian
+
     AMD
       Advanced Micro Devices
 

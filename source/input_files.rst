@@ -11,7 +11,16 @@ A nekRS simulation is referred to as a "case," and at a minimum requires four fi
 * User-defined functions for the host, with ``.udf`` extension
 * User-defined functions for the device, with ``.oudf`` extension
 
-The next four sections describe the structure and syntax for each of these four files.
+The "case name" is then the common prefix applied to these files - for instance,
+a complete input description with a case name of "eddy" would be given by the files
+``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``edd.oudf``.
+The only restrictions on the case name are:
+
+* It must be used as the prefix on all simulation files, and
+* Typical restrictions for naming files for your operating system
+
+The next four sections describe the structure and syntax for each of these four files
+for a general case.
 Because the :term:`Nek5000` code is a predecessor to
 nekRS, some aspects of the current nekRS input file design are selected to enable faster translation of
 Nek5000 input files into nekRS input files. Because these
@@ -20,18 +29,9 @@ files, and in some cases, careful usage of fixed-format text inputs, all
 Nek5000-based methods for case setup are referred to here as "legacy" approaches.
 All new users are encouraged to adopt the nekRS-based problem setup.
 
-Each of the four required input files is described only in terms of its file extension (such as
-``.par`` and ``.udf``). A full simulation "case" consists of all of these files with
-a common prefix. For instance, in the ``nekRS/examples/eddyPeriodic`` directory, you will see
-files named ``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``eddy.oudf``, where ``eddy`` is
-referred to as the case "name." The only restrictions on the case name are:
-
-* It must be used as the prefix on all simulation files, and
-* Typical restrictions for naming files for your operating system
-
 The scope of this page is merely to introduce the format and purpose of the four
 files needed to set up a nekRS simulation. Much more detailed instructions are provided
-on the :ref:`Detailed Usage <detailed>` page.
+on the :ref:`FAQs <detailed>` page.
 
 Parameter File (.par)
 _____________________
@@ -56,7 +56,8 @@ The valid sections for setting up a nekRS simulation are:
 
 * ``BOOMERAMG``: settings for the (optional) :term:`AMG` solver
 * ``GENERAL``: generic settings for the simulation
-* ``OCCA``: backend device settings
+* ``MESH``: settings for the mesh
+* ``OCCA``: backend :term:`OCCA` device settings
 * ``PRESSURE``: settings for the pressure solution
 * ``PROBLEMTYPE``: settings for the governing equations
 * ``SCALARXX``: settings for the ``XX``-th scalar
@@ -65,20 +66,22 @@ The valid sections for setting up a nekRS simulation are:
 
 Each of the keys and value types are now described for these sections. The
 formatting used here to describe valid key, value combinations is as follows.
-For character-type values, take the ``backend`` key in the ``OCCA`` section
-as an example:
+Take the ``backend`` key in the ``OCCA`` section as an example:
 
 **backend** *(CUDA), CPU, HIP, OPENCL, OPENMP, SERIAL* [``THREAD MODEL``]
 
 Here, ``backend`` is the key, and ``CUDA``, ``CPU``, ``HIP``, ``OPENCL``, ``OPENMP``,
 and ``SERIAL`` are all valid values. Defaults are indicated in parentheses - therefore,
-if you do not explicitly give the ``backend`` key, value pair in the ``.par`` file,
-the :term:`CUDA` backend is used.
+if you do not explicitly give the ``backend`` in the ``.par`` file,
+the :term:`CUDA` backend is used. Similar conventions are used to describe non-character
+type values; for instance, *(3), <int>* indicates that the default value for the indicated
+key is 3, but any integer value can be provided.
 
-The values associated with the various keys in the ``.par`` file are read by nekRS
-and then saved to various arguments in the ``options`` data structure. Here,
-the value set by the ``backend`` key is stored in the ``THREAD MODEL`` argument.
-In other words, if you wanted to grab the value set by the user for the
+Mose of the values associated with the various keys in the ``.par`` file are read by nekRS
+and then saved to various arguments in the ``options`` data structure. The argument
+is indicated in this section within square brrackets. For example,
+the value set by the ``backend`` key is stored in the ``THREAD MODEL`` argument
+to ``options``. In other words, if you wanted to grab the value set by the user for the
 ``backend`` key, and save it in a local variable named ``user_occa_backend``,
 you can use the ``getArgs`` function on the ``options`` data structure as follows.
 
@@ -88,12 +91,11 @@ you can use the ``getArgs`` function on the ``options`` data structure as follow
   options.getArgs("THREAD MODEL", user_occa_backend);
 
 In other words, if you have ``backend = CUDA`` in the ``.par`` file, then
-``user_occa_backend`` would be set to ``CUDA`` in the above code. Generally,
-nekRS does not save the user settings to a data structure, so throughout the code
+``user_occa_backend`` would be set to ``CUDA`` in the above code.
+
+Generally, most ``.par`` settings are not saved to a data structure, so throughout the code
 base, whenever information from the ``.par`` file is needed, it is simply
-extracted on-the-fly via the ``options`` structure. Not all values are saved
-directly in an argument to the ``options`` data structure, but those that are saved
-are shown in square brackets, like [``ARGUMENT NAME``].
+extracted on-the-fly via the ``options`` structure.
 
 .. warning::
 
@@ -108,7 +110,7 @@ into program execution. These functions can be written to allow ultimate flexibi
 the part of the user to affect the simulation, such as to define custom fluid properties,
 specify spatially-dependent boundary and initial conditions, and apply post-processing
 operations. Some of the parameters in the sections can be overridden through the use of
-user-defined functions - see, for example, the ``viscosity`` parameter than is a key in
+user-defined functions - see, for example, the ``viscosity`` key in
 the ``VELOCITY`` section. This parameter is used to set a constant viscosity, whereas
 for variable-property simulations, a user-defined function will override the ``viscosity``
 input parameter. A full description of these user-defined functions on the host and
@@ -120,17 +122,19 @@ of nekRS.
 ``BOOMERAMG`` section
 ^^^^^^^^^^^^^^^^^^^^^
 
-**coarsenType**
+This section is used to describe settings for the (optional) :term:`AMG` solver.
 
-**interpolationType**
+**coarsenType** [``BOOMERAMG COARSEN TYPE``]
 
-**iterations** *<int>*
+**interpolationType** [``BOOMERAMG INTERPOLATION TYPE``]
 
-**nonGalerkinTol**
+**iterations** *<int>* [``BOOMERAMG ITERATIONS``]
 
-**smootherType**
+**nonGalerkinTol** [``BOOMERAMG NONGALERKIN TOLERANCE``]
 
-**strongThreshold** *<double>*
+**smootherType** [``BOOMERAMG SMOOTHER TYPE``]
+
+**strongThreshold** *<double>* [``BOOMERAMG NONGALERKIN TOLERANCE``]
 
 ``GENERAL`` section
 ^^^^^^^^^^^^^^^^^^^
@@ -268,8 +272,25 @@ in units of simulation time for ``writeControl = runTime``. If a runtime step co
 used that does not perfectly align with the time steps of the simulation, nekRS will write
 an output file on the timestep that most closely matches the desired write interval.
 
+``MESH`` section
+^^^^^^^^^^^^^^^^
+
+This section is used to describe mesh settings and set up various mesh solvers
+for mesh motion.
+
+**partitioner** [``MESH PARTITIONER``]
+
+**solver** *elasticity, none, user*
+
+If ``solver = none``, the mesh does not move and [``MOVING MESH``] is set to false.
+Otherwise, the solver is stored in [``MESH SOLVER``]. When ``solver = user``, the
+mesh moves according to a user-specified velocity. Alternatively, if
+``solver = elasticity``, then the mesh motion is solved with an :term:`ALE` formulation.
+
 ``OCCA`` section
 ^^^^^^^^^^^^^^^^
+
+This section is used to specify the :term:`OCCA` backend for parallelization.
 
 **backend** *(CUDA), CPU, HIP, OPENCL, OPENMP, SERIAL* [``THREAD MODEL``]
 
@@ -281,28 +302,39 @@ OCCA backend; ``CPU`` is the same as ``SERIAL``, and means that parallelism is a
 ``PRESSURE`` section
 ^^^^^^^^^^^^^^^^^^^^
 
-**amgSolver** *paralmond*
+The ``PRESSURE`` section describes solve settings for the pressure equation. Note that
+this block is only read if the ``VELOCITY`` block is also present.
 
-**downwardSmoother** *ASM, jacobi, RAS*
+.. TODO: This section needs a lot more work describing all the parameters
 
-**galerkinCoarseOperator** *<bool>*
+**downwardSmoother** *ASM, jacobi, RAS* [``PRESSURE MULTIGRID DOWNWARD SMOOTHER``]
 
-**pMultigridCoarsening**
+**galerkinCoarseOperator** *<bool>* [``GALERKIN COARSE OPERATOR``]
 
-**preconditioner** *jacobi, multigrid*
+**maxIterations** *<int>* [``PRESSURE MAXIMUM ITERATIONS``]
 
-**residualProjection** *<bool>*
+**pMultigridCoarsening** [``PRESSURE MULTIGRID COARSENING``]
 
-**residualProjectionStart** *<int>*
+**preconditioner** *jacobi, multigrid, none, semfem, semg* [``PRESSURE PRECONDITIONER``]
 
-**residualProjectionVectors** *<int>*
+The pressure preconditioner to use; ``semg`` and ``multigrid`` both result
+in a multigrid preconditioner.
 
-**residualTol** *<double>*
-  Absolute residual tolerance for the pressure solution
+**residualProj** *(true), false* [``PRESSURE RESIDUAL PROJECTION``]
 
-**smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras*
+**residualProjectionStart** *<int>* [``PRESSURE RESIDUAL PROJECTION START``]
 
-**upwardSmoother** *ASM, JACOBI, RAS*
+**residualProjectionVectors** *<int>* [``PRESSURE RESIDUAL PROJECTION VECTORS``]
+
+**residualTol** *<double>* [``PRESSURE SOLVER TOLERANCE``]
+
+Absolute residual tolerance for the pressure solution
+
+**smootherType** *additive, asm, chebyshev, chebyshev+ras, chebyshev+asm, ras* [``PRESSURE MULTIGRID SMOOTHER``]
+
+**solver**
+
+**upwardSmoother** *ASM, JACOBI, RAS* [``PRESSURE MULTIGRID UPWARD SMOOTHER``]
 
 ``PROBLEMTYPE`` section
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -335,17 +367,19 @@ passive scalar. For instance, in a simulation with two passive scalars, you woul
 two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive scalar.
 
 **boundaryTypeMap** *<string[]>*
-  Array of strings describing the boundary condition to be applied to each sideset, ordered
-  by sideset ID. The valid characters/strings are shown in Table
-  :ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
+
+Array of strings describing the boundary condition to be applied to each sideset, ordered
+by sideset ID. The valid characters/strings are shown in Table
+:ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
 
 **diffusivity** *<double>*
-  Although this is named ``diffusivity``, this parameter doublely represents the conductivity
-  governing diffusion of the passive scalar. In other words, the analogue from the
-  ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
-  ``conductivity`` parameter. If a negative value is provided, the
-  conductivity is internally set to :math:`1/|k|`, where :math:`k` is the value of the
-  ``conductivity`` key. If not specified, this defaults to :math:`1.0`.
+
+Although this is named ``diffusivity``, this parameter doublely represents the conductivity
+governing diffusion of the passive scalar. In other words, the analogue from the
+``TEMPERATURE`` section (a passive scalar in its internal representation) is the
+``conductivity`` parameter. If a negative value is provided, the
+conductivity is internally set to :math:`1/|k|`, where :math:`k` is the value of the
+``conductivity`` key. If not specified, this defaults to :math:`1.0`.
 
 **residualProjection** *<bool>*
 
@@ -354,74 +388,108 @@ two sections - ``SCALAR01`` and ``SCALAR02``, each of which represents a passive
 **residualProjectionVectors** *<int>*
 
 **residualTol** *<double>*
-  Absolute residual tolerance for the passive scalar solution
+
+Absolute residual tolerance for the passive scalar solution
 
 **rho** *<double>*
-  Although this is name ``rho``, this parameter doublely represents the coefficient on the
-  total derivative of the passive scalar. In other words, the analogue from the
-  ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
-  ``rhoCp`` parameter. If not specified, this defaults to :math:`1.0`.
+
+Although this is name ``rho``, this parameter doublely represents the coefficient on the
+total derivative of the passive scalar. In other words, the analogue from the
+``TEMPERATURE`` section (a passive scalar in its internal representation) is the
+``rhoCp`` parameter. If not specified, this defaults to :math:`1.0`.
 
 ``TEMPERATURE`` section
 ^^^^^^^^^^^^^^^^^^^^^^^
 
+This section is used to define the transport parameters and solver settings for the
+temperature passive scalar.
+
 **boundaryTypeMap** *<string[]>*
-  Array of strings describing the boundary condition to be applied to each sideset, ordered
-  by sideset ID. The valid characters/strings are shown in Table
-  :ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
 
-**conductivity** *<double>*
-  Constant thermal conductivity; if a negative value is provided, the thermal conductivity
-  is internally set to :math:`1/|k|`, where :math:`k` is the value of the ``conductivity``
-  key. If not specified, this defaults to :math:`1.0`.
+Array of strings describing the boundary condition to be applied to each sideset, ordered
+by sideset ID. The valid characters/strings are shown in Table
+:ref:`Passive Scalar Boundary Conditions <scalar_bcs>`.
 
-**residualProjection** *<bool>*
+**conductivity** *<double>* [``SCALAR00 DIFFUSIVITY``]
 
-**residualProjectionStart** *<int>*
+Constant thermal conductivity; if a negative value is provided, the thermal conductivity
+is internally set to :math:`1/|k|`, where :math:`k` is the value of the ``conductivity``
+key. If not specified, this defaults to :math:`1.0`.
 
-**residualProjectionVectors** *<int>*
+**residualProj** *<bool>* [``SCALAR00 RESIDUAL PROJECTION``]
 
-**residualTol** *<double>*
-  Absolute residual tolerance for the temperature solution
+**residualProjectionStart** *<int>* [``SCALAR00 RESIDUAL PROJECTION START``]
 
-**rhoCp** *<double>*
-  Constant volumetric isobaric specific heat. If not specified, this defaults to :math:`1.0`.
+**residualProjectionVectors** *<int>* [``SCALAR00 RESIDUAL PROJECTION VECTORS``]
+
+**residualTol** *<double>* [``SCALAR00 SOLVER TOLERANCE``]
+
+**rhoCp** *<double>* [``SCALAR00 DENSITY``]
+
+Constant volumetric isobaric specific heat. If not specified, this defaults to :math:`1.0`.
 
 **solver** *none*
-  You can turn off the solution of temperature by setting the solver to ``none``
+
+You can turn off the solution of temperature by setting the solver to ``none``.
 
 ``VELOCITY`` section
 ^^^^^^^^^^^^^^^^^^^^
 
+This section is used to define the transport properties and solver settings for the
+velocity.
+
 **boundaryTypeMap** *<string[]>*
-  Array of strings describing the boundary condition to be applied to each sideset, ordered
-  by sideset ID. The valid characters/strings are shown in Table
-  :ref:`Flow Boundary Conditions <flow_bcs>`. Note that no boundary conditions need to be
-  specified in the ``PRESSURE`` section, since the form of the pressure conditions are
-  specified in tandem with the velocity conditions with this parameter.
 
-**density** *<double>*
-  Constant fluid density. If not specified, this defaults to :math:`1.0`.
+Array of strings describing the boundary condition to be applied to each sideset, ordered
+by sideset ID. The valid characters/strings are shown in Table
+:ref:`Flow Boundary Conditions <flow_bcs>`. Note that no boundary conditions need to be
+specified in the ``PRESSURE`` section, since the form of the pressure conditions are
+specified in tandem with the velocity conditions with this parameter.
 
-**residualProjection** *<bool>*
+**density** *<double>* [``DENSITY``]
 
-**residualProjectionStart** *<int>*
+Constant fluid density. If not specified, this defaults to :math:`1.0`.
 
-**residualProjectionVectors** *<int>*
+**maxIterations** *(200), <int>* [``VELOCITY MAXIMUM ITERATIONS``]
 
-**residualTol** *<double>*
+Maximum number of iterations for the velocity solve
 
-**solver** *none*
-  You can turn off the solution of the flow (velocity and pressure) by setting the solver
-  to ``none``.
+**residualProj** *<bool>* [``VELOCITY RESIDUAL PROJECTION``]
 
-**viscosity** *<double>*
-  Constant dynamic viscosity; if a negative value is provided, the dynamic viscosity is
-  internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
-  If not specified, this defaults to :math:`1.0`.
+**residualProjectionStart** *<int>* [``VELOCITY RESIDUAL PROJECTION START``]
+
+**residualProjectionVectors** *<int>* [``VELOCITY RESIDUAL PROJECTION VECTORS``]
+
+**residualTol** *<double>* [``VELOCITY SOLVER TOLERANCE``]
+
+Absolute tolerance used for the velocity solve.
+
+**solver** *none* [``VELOCITY SOLVER``]
+
+You can turn off the solution of the flow (velocity and pressure) by setting the solver
+to ``none``. Otherwise, if you omit ``solver`` entirely, the velocity solve will be turned on.
+If you turn the velocity solve off, then you automatically also turn off the pressure solve.
+
+**viscosity** *<double>* [``VISCOSITY``]
+
+Constant dynamic viscosity; if a negative value is provided, the dynamic viscosity is
+internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
+If not specified, this defaults to :math:`1.0`.
 
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^
+
+An alternative to the use of the ``.par`` file is to use the legacy Nek5000-based ``.rea`` file
+to set up the case parameters.
+See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
+`documentation <http://nek5000.github.io/NekDoc/problem_setup/case_files.html>`__ [#f1]_
+for further details on the format for the ``.rea`` file.
+
+The ``.rea`` file contains both simulation parameters (now coveredby the ``.par`` file) as well
+as mesh information (now covered by the ``.re2`` file). This section
+here only describes the legacy approach to setting simulation parameters via the ``.rea`` file.
+
+.. TODO: describe the .rea file approach
 
 Mesh File (.re2)
 ________________
@@ -448,11 +516,12 @@ for differentiating between fluid and solid regions. Rather than block-restricti
 particular regions of the same mesh, nekRS retains two independent mesh representations
 for the same problem. One of these meshes represents the flow domain, while the other
 represents the heat transfer domain. The ``nrs_t`` struct, which encapsulates all of
-the nekRS simulation data related to the flow solution, has two mesh objects -
-the flow mesh ``nrs_t.mesh`` and the heat transfer mesh ``nrs_t.meshT``. Similarly,
+the nekRS simulation data related to the flow solution, represents the flow mesh as
+``nrs_t.mesh``. Similarly,
 the ``cds_t`` struct, which encapsulates all of the nekRS simulation data related to the
-convection-diffusion passive scalar solution, has two mesh objects -
-the heat transfer mesh ``cds_t.mesh`` and the flow mesh ``cds_t.meshV``.
+convection-diffusion passive scalar solution, has one mesh for each passive scalar. That is,
+``cds_t.mesh[0]`` is the mesh for the first passive scalar, ``cds_t.mesh[1]`` is the mesh
+for the second passive scalar, and so on.
 Note that only the temperature passive scalar uses the conjugate heat transfer mesh,
 even though the ``cds_t`` struct encapsulates information related to all other
 passive scalars (such as chemical concentration, or turbulent kinetic energy). All
@@ -464,7 +533,8 @@ non-temperature scalars are only solved on the flow mesh.
   IDs and spatial coordinates), you must take care to use the correct mesh representation
   for your problem. For instance, to apply initial conditions to a flow variable, you
   would need to loop over the number of quadrature points known on the ``nrs_t`` meshes,
-  rather than the ``cds_t`` meshes for the passive scalars.
+  rather than the ``cds_t`` meshes for the passive scalars (unless the meshes are the same,
+  such as if you have heat transfer in a fluid-only domain).
   Also note that the ``cds_t * cds`` object will not exist if your problem
   does not have any passive scalars.
 
@@ -501,12 +571,15 @@ for more information on the use of these scripts.
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The very early equivalent of the ``.par`` parameter file for :term:`Nek5000` was a file with extension
-``.rea``. This file contained similar user settings for problem parameters that now are
-set in the ``.par`` file, in addition to ASCII text format describing each node of the
-mesh. See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
+An alternative to the use of the ``.re2`` mesh file is to use the legacy Nek5000-based ``.rea`` file
+to set up the mesh.
+See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
 `documentation <http://nek5000.github.io/NekDoc/problem_setup/case_files.html>`__ [#f1]_
 for further details on the format for the ``.rea`` file.
+
+The ``.rea`` file contains both simulation parameters (now coveredby the ``.par`` file) as well as
+mesh information (now covered by the ``.re2`` file). This section
+here only describes the legacy approach to setting mesh information via the ``.rea`` file.
 
 The mesh section of the ``.rea`` file can be generated in two different manners -
 either by specifying all the element nodes by hand, or with the :term:`Nek5000` mesh
@@ -535,9 +608,8 @@ language as well as some knowledge of the nekRS source code internals.
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 This user-defined function is probably the most flexible of the nekRS user-defined
-functions. This function is called once at the start of the simulation just before 
+functions. This function is called once at the start of the simulation just before
 beginning the time stepping, and then once per time step after running each step.
-
 
 ``UDF_LoadKernels(nrs_t*  nrs)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -552,7 +624,7 @@ and only involves:
 
 * Declaring all kernels as ``static occa::kernel`` at the top of the ``.udf`` file
 * Loading those kernels in ``UDF_LoadKernels``
-* Defining those kernels in the device user file, ``.oudf``
+* Defining those kernels in the device user file (the ``.oudf`` file)
 
 The only kernels in the ``.oudf`` file that don't need to be exlicitly loaded are
 the boundary condition kernels that ship with nekRS. During the ``.oudf`` just-in-time
@@ -571,7 +643,7 @@ into a generic :term:`OCCA` kernel that is then written into a just-in-time comp
    found = buffer.str().find("void scalarDirichletConditions");
    if (found == std::string::npos)
      out << "void scalarDirichletConditions(bcData *bc){}\n";
-   
+
    out <<
      "@kernel void __dummy__(int N) {"
      "  for (int i = 0; i < N; ++i; @tile(16, @outer, @inner)) {}"
@@ -616,18 +688,11 @@ commonly used to:
 Any other additional setup actions that depend on initialization of the solution arrays
 and mesh can of course also be placed in this function.
 
-Specifying Initial Conditions
-"""""""""""""""""""""""""""""
+Other Functions for Custom Sources on the ``udf`` Structure
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Initial conditions are specified by looping over all :term:`GLL` points and assigning
-values based on the position and user-defined parameters. See the :ref:`Setting Initial Conditions <setting_ICs>`
-section for an example on the use of this function for setting initial conditions.
-
-Specifying Custom Source Terms and Properties
-"""""""""""""""""""""""""""""""""""""""""""""
-
-In addition to the ``UDF_Setup0``, ``UDF_Setup``, ``UDF_ExecuteStep``, and ``UDF_LoadKernels``
-functions described in detail here, there are other user-defined functions. These functions
+In addition to the ``UDF_Setup0``, ``UDF_Setup``, ``UDF_ExecuteStep``, and ``UDF_LoadKernels``,
+there are other user-defined functions. These functions
 are handled in a slightly different manner - rather than be tied to a specific function name
 like ``UDF_Setup0``, these functions are provided in terms of generic function pointers to
 *any* function (provided the function parameters match those of the pointer). The four
@@ -636,6 +701,7 @@ function pointers are named as follows in nekRS:
 ================== ======================================================== ===================
 Function pointer   Function signature                                       Purpose
 ================== ======================================================== ===================
+``udf.converged``  ``f(nrs_t* nrs, int stage)``
 ``udf.uEqnSource`` ``f(nrs_t* nrs, float t, m o_U, m o_FU)``                momentum source
 ``udf.sEqnSource`` ``f(nrs_t* nrs, float t, m o_S, m o_SU)``                scalar source
 ``udf.properties`` ``f(nrs_t* nrs, float t, m o_U, m o_S, m o_Up, m o_Sp)`` material properties
@@ -647,6 +713,7 @@ name of the function, which can be *any* user-defined name. Other parameters tha
 function signatures are as follows:
 
 * ``nrs`` is a pointer to the nekRS simulation object
+* ``stage``
 * ``t`` is the current simulation time
 * ``o_U`` is the velocity solution on the device
 * ``o_S`` is the scalar solution on the device
@@ -660,7 +727,8 @@ The ``udf.uEqnSource`` allows specification of a momentum source, such as a grav
 a friction form loss. The ``udf.sEqnSource`` allows specification of a source term for the passive
 scalars. For a temperature passive scalar, this source term might represent a volumetric heat source,
 while for a chemical concentration passive scalar, this source term could represent a mass
-source.
+source. See the :ref:`Setting Custom Source Terms <custom_sources>` section for an example
+of setting custom source terms.
 
 The ``udf.properties`` allows specification of custom material properties for the flow
 and passive scalar equations,
@@ -668,12 +736,19 @@ which can be a function of the solution as well as position and time. See the
 :ref:`Setting Custom Properties <custom_properties>` section for an example of setting custom
 properties.
 
+.. TODO: describe what ``udf.converged`` is
+
 Finally, ``udf.div``
 allows specification of the thermal divergence term needed for the low Mach formulation.
-See the :ref:`Detailed Usage <detailed>` page for an example of each of these use cases.
+
 
 Legacy Option (.usr)
 ^^^^^^^^^^^^^^^^^^^^
+
+The legacy alternative to user-defined functions in the ``.udf`` file is to write
+Fortran routines in a ``.usr`` file based on Nek5000 code internals.
+
+.. TODO: describe how to use the ``.usr`` file
 
 .. _oudf_functions:
 
@@ -684,7 +759,7 @@ This file contains all user-defined functions that are to run on the device. The
 all functions used to apply boundary conditions that are built in to nekRS, as well as any other
 problem-specific device functions.
 
-Specifying Boundary Conditions
+Boundary Condition Functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The type of condition to apply for each boundary is specified by the ``boundaryTypeMap`` parameter
@@ -739,7 +814,7 @@ Each function has the same signature, and takes as input the ``bc`` object. This
 all information needed to apply a boundary condition - the position, unit normals, and solution
 components. The "character map" refers to the character in the ``boundaryTypeMap`` key in the
 ``.par`` file that will trigger this boundary condition. The character map can either be a single
-letter, or a more verbose (and equivalent) 
+letter, or a more verbose (and equivalent) string.
 
 The ``scalar``-type boundary conditions
 are called for boundary conditions on passive scalars, while the ``pressure``- and ``velocity``-type
