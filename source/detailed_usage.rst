@@ -107,6 +107,11 @@ To convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
   Enter mesh dimension: 3
   Input (.msh) file name: my_mesh
 
+Note that before exporting from Gmsh, you will need to set the mesh order to 2.
+The Gmsh mesh format must also be version 2, ASCII format. If your Gmsh version
+shows a pop-up box when exporting the mesh, do *not* click "Save all elements"
+or "Save parametric elements".
+
 .. _cht_mesh:
 
 Creating a Mesh for Conjugate Heat Transfer
