@@ -90,9 +90,7 @@ To convert from an Exodus format mesh
   user$ exo2nek
 
 Then, follow the on-screen prompts associated with the ``exo2nek`` script.
-Note that while the ``.re2`` format supports both HEX8 and HEX20 elements, the ``exo2nek`` script
-is currently limited to HEX20 elements. Therefore, all Exodus format meshes must be
-generated with HEX20 elements.
+``exo2nek`` will convert all elements in the Exodus mesh (TET6, WEDGE6, HEX8, HEX20) to HEX20 elements and dump into ``.re2`` format.
 
 Converting a Gmsh mesh
 """"""""""""""""""""""
@@ -107,8 +105,8 @@ To convert from a Gmsh format mesh (for this case, named ``my_mesh.msh``) to the
   Enter mesh dimension: 3
   Input (.msh) file name: my_mesh
 
-Note that before exporting from Gmsh, you will need to set the mesh order to 2.
-The Gmsh mesh format must also be version 2, ASCII format. If your Gmsh version
+All your mesh should be hexahedral elements. Before exporting from Gmsh, you will need to set the mesh order to 2.
+The Gmsh mesh format must also be version 2, ASCII/binary format. If your Gmsh version
 shows a pop-up box when exporting the mesh, do *not* click "Save all elements"
 or "Save parametric elements".
 
