@@ -18,27 +18,18 @@ for reference.
 Building the Nek5000 Tool Scripts
 ---------------------------------
 
-Some user actions in nekRS require the use of scripts that ship with the :term:`Nek5000`
-dependency. To build these scripts, you must first compile nekRS so that the Nek5000
-dependency is pulled into the repository. Then, navigate to the ``tools`` directory
-and run the makefile to compile all the scripts.
+Some user actions in nekRS require the use of scripts available with :term:`Nek5000`.
+To build these scripts, you will need to separately clone Nek5000, and then
+navigate to the ``tools`` directory and run the makefile to compile all the scripts.
 
 .. code-block::
 
-  user$ cd nekRS/build/_deps/nek5000_content-src/tools
-  user$ ./maketools all
-
-This should create binary executables in the ``nekRS/build/_deps/nek5000_content-src/tools/bin``
-directory. You may want to add this to your path in order to quickly access those scripts.
-
-Alternatively, if you have cloned the :term:`Nek5000` repository separately (this is not needed for nekRS), the tools in this repository are the same as those pulled in by nekRS. If you build the tools in the Nek5000 repository, you can use them equivalently:
-
-.. code-block::
-
+  user$ git clone https://github.com/Nek5000/Nek5000.git
   user$ cd Nek5000/tools
   user$ ./maketools all
 
-This should create binary executables in the ``Nek5000/bin`` directory.
+This should create binary executables in the ``Nek5000/bin``
+directory. You may want to add this to your path in order to quickly access those scripts.
 
 .. _nekrs_scripts:
 
@@ -986,6 +977,104 @@ In the directory where the case files are located, run the ``visnek`` script:
 
 which will create a ``case.nek5000`` file that is viewable in Paraview. See
 :ref:`Building the Nek5000 Tool Scripts <scripts>` for instructions on compiling the ``visnek`` program.
+
+Calculating the Distance to a Wall
+----------------------------------
+
+nekRS allows users to access many Nek5000 "backends" through the (optional)
+``<case>.usr`` file. A common use case is to calculate the distance from each
+:term:`GLL` point to a boundary, such as for setting initial conditions for turbulent quantities
+or other closures. The procedure to compute and then use these values is as follows.
+
+First, in the ``usrdat2`` subroutine, make sure that all boundaries for which
+you want to compute the distance for are "wall" boundaries by explicitly setting
+the ``cbc`` array for each wall boundary. In the example shown below, we assume that
+the mesh already has sidesets defined in it (assigned through Cubit/gmsh/however else
+the mesh was created). We then loop over all the :term:`GLL` points and determine
+if the point is on the boundary of interest by checking if the boundary ID is
+equal to the sideset of interest. This is done by checking the absolute difference
+between the ``bc`` array and the sideset value of interest (in this example, the sideset
+is 7). If the boundary ID matches the sideset of interest, then we set the ``cbc`` array
+to ``W``, or the character that indicates a no-slip wall boundary.
+
+.. code-block::
+
+  subroutine usrdat2
+  include 'SIZE'
+  include 'TOTAL'
+  integer e,f
+
+  n = lx1*ly1*lz1*nelv
+  nxz = nx1*nz1
+  nface = 2*ldim
+
+  do iel=1,nelv
+  do ifc=1,2*ndim
+     if (abs((bc(5,ifc,iel,1)-7.0)).lt.1e-4) cbc(ifc,iel,1)= 'W  '
+  enddo
+  enddo
+
+  return
+  end
+
+In other words,
+if your wall boundaries were instead boundaries 3 and 4, the ``if (abs...)`` lines
+in the above example would become:
+
+.. code-block::
+
+  if (abs((bc(5,ifc,iel,1)-3.0)).lt.1e-4) cbc(ifc,iel,1)= 'W  '
+  if (abs((bc(5,ifc,iel,1)-4.0)).lt.1e-4) cbc(ifc,iel,1)= 'W  '
+
+Next, in the ``usrdat3`` subroutine, you simply need to call the
+``dist`` function, which loops over all boundaries with ``W`` type
+and determines the distance of all :term:`GLL` points to those boundaries.
+The result of the calculation should be stored into the ``nrs_scptr(1)`` pointer,
+which is then what we will access in the ``.udf`` file.
+
+.. code-block::
+
+  subroutine usrdat3
+  include 'SIZE'
+  include 'TOTAL'
+
+  common /scrach_o1/
+   w1(lx1*ly1*lz1*lelv)
+  ,w2(lx1*ly1*lz1*lelv)
+  ,w3(lx1*ly1*lz1*lelv)
+  ,w4(lx1*ly1*lz1*lelv)
+  ,w5(lx1*ly1*lz1*lelv)
+
+  common /scrach_o2/
+   ywd(lx1,ly1,lz1,lelv)
+
+  COMMON /NRSSCPTR/ nrs_scptr(1)
+  integer*8         nrs_scptr
+
+  call distf(ywd,1,'W  ',w1,w2,w3,w4,w5)
+
+  nrs_scptr(1) = loc(ywd)
+
+  return
+  end
+
+Then, you can access the results of the distance-to-wall calculation in the ``.udf``
+by assigning a pointer to the ``nek::scPtr(1)`` array. Note that this call must be
+within ``UDF_ExecuteStep`` so that the Nek5000 backend will have been called first.
+
+.. code-block::
+
+  void UDF_ExecuteStep(nrs_t * nrs, dfloat time, int tstep)
+  {
+    double * wall_distance = (double *) nek::scPtr(1);
+
+    // then, you can copy it into some device-side memory so you can use it in
+    // BCs if you want
+    auto mesh = nrs->meshV;
+    int n_gll_points = mesh->Np * mesh->Nelements;
+    int write_location = 2; // "slice" into which you want to write, in case nrs->o_usrwrk holds other info
+    nrs->o_usrwrk.copyFrom(wall_distance, n_gll_points * sizeof(dfloat), write_location * nrs->fieldOffset * sizeof(dfloat));
+  }
 
 .. rubric:: Footnotes
 
