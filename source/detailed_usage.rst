@@ -987,8 +987,8 @@ nekRS allows users to access many Nek5000 "backends" through the (optional)
 or other closures. The procedure to compute and then use these values is as follows.
 
 First, in the ``usrdat2`` subroutine, make sure that all boundaries for which
-you want to compute the distance for are "wall" boundaries by explicitly setting
-the ``cbc`` array for each wall boundary. In the example shown below, we assume that
+you want to compute the distance for are marked as "wall" boundaries in the ``cbc`` array.
+In the example shown below, we assume that
 the mesh already has sidesets defined in it (assigned through Cubit/gmsh/however else
 the mesh was created). We then loop over all the :term:`GLL` points and determine
 if the point is on the boundary of interest by checking if the boundary ID is
@@ -1051,12 +1051,20 @@ which is then what we will access in the ``.udf`` file.
   COMMON /NRSSCPTR/ nrs_scptr(1)
   integer*8         nrs_scptr
 
-  call distf(ywd,1,'W  ',w1,w2,w3,w4,w5)
+  call distf(ywd,7,'W  ',w1,w2,w3,w4,w5)
 
   nrs_scptr(1) = loc(ywd)
 
   return
   end
+
+In other words, if your wall boundaries were instead boundaries 3 and 4, the
+``call distf...`` lines in the above example would become:
+
+.. code-block::
+
+  call distf(ywd,3,'W  ',w1,w2,w3,w4,w5)
+  call distf(ywd,4,'W  ',w1,w2,w3,w4,w5)
 
 Then, you can access the results of the distance-to-wall calculation in the ``.udf``
 by assigning a pointer to the ``nek::scPtr(1)`` array. Note that this call must be
