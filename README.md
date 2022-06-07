@@ -1,10 +1,13 @@
 # nekRS Documentation
 
 This repository contains documentation of the [nekRS](https://github.com/Nek5000/nekRS) project
-using the [Sphinx](http://www.sphinx-doc.org/) documentation framework.
+using the [Sphinx](http://www.sphinx-doc.org/) documentation framework. A read the docs website
+is hosted [here](https://nekrsdoc.readthedocs.io/en/latest/index.html).
 
-## How to build
+## How to build locally
 
+If you are developing documentation and want to preview the website before a pull request is
+merged,
 `make html` builds the user documentation as a set of interlinked HTML 
 and image files.  The top-level webpage is `build/html/index.html`. To view this documentation
 as a navigable HTML web page, simply navigate to the `build/html/index.html` file in
