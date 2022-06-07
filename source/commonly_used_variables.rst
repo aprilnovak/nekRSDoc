@@ -122,7 +122,7 @@ Variable Name      Size                              Device?            Meaning
 ``P``              ``fieldOffset``                   :math:`\checkmark` pressure solution for most recent time step
 ``prop``           ``2 * fieldOffset``               :math:`\checkmark` total dynamic viscosity (laminar plus turbulent) and density (in this order) for the momentum equation
 ``U``              ``NVfields * fieldOffset``        :math:`\checkmark` velocity solution for all components for most recent time step
-================== ============================ ================== ======================================================================================================
+================== ================================= ================== ======================================================================================================
 
 Passive Scalar Solution Fields and Simulation Settings
 ------------------------------------------------------
