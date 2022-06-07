@@ -1084,6 +1084,69 @@ within ``UDF_ExecuteStep`` so that the Nek5000 backend will have been called fir
     nrs->o_usrwrk.copyFrom(wall_distance, n_gll_points * sizeof(dfloat), write_location * nrs->fieldOffset * sizeof(dfloat));
   }
 
+Periodic Boundary Conditions
+----------------------------
+
+NekRS supports periodic boundary conditions. To set up a periodic case, first
+you need to run ``exo2nek`` to establish the pairings between the periodic sidesets.
+All this information will be prompted on the screen by ``exo2nek``;
+You will provide the sideset IDs of the periodic boundaries, a search tolerance
+for identifying paired sides, and a translation vector that points from one of the
+paired sidesets to the other. For example, if you want to have one periodic surface
+that is a :math:`z`-plane at :math:`z=-1.0` that is paired to another :math:`z`-plane
+at :math:`z=1.0`, the translation vector would be :math:`(0.0, 0.0, 2.0)`.
+
+After generating the mesh, you then need to modify the sideset IDs inside the
+``usrdat2`` function. Any boundary that is now periodic, you need to set
+``boundaryID(ifc,iel)`` to 0. For all non-periodic boundaries, you need to
+"renormalize" those boundaries to "begin counting" from 1. For example, consider
+an original (non-periodic) mesh with sidesets 1, 2, 3, and 4. You run ``exo2nek``
+and set up sidesets 2 and 3 as periodic. Then, in the code snippet below, you
+would reset sidesets 2 and 3 in ``boundaryID`` to zero. For the remaining two
+boundaries (originally 1 and 4), you need to renormalized those to boundaries
+1 and 2 (because NekRS wants the boundaries to be ordered sequentially beginning
+from 1).
+
+.. code-block::
+
+      subroutine usrdat2
+      include 'SIZE'
+      include 'TOTAL'
+      integer e,f
+
+      n = lx1*ly1*lz1*nelv
+      nxz = nx1*nz1
+      nface = 2*ldim
+
+      do iel=1,nelt
+      do ifc=1,2*ndim
+         if (boundaryID(ifc,iel).eq. 1) then
+           boundaryID(ifc,iel) = 1
+         else if (boundaryID(ifc,iel).eq. 2) then
+           boundaryID(ifc,iel) = 0
+         else if (boundaryID(ifc,iel) .eq. 3) then
+           boundaryID(ifc,iel) = 0
+         else if (boundaryID(ifc,iel) .eq. 4) then
+           boundaryID(ifc,iel) = 2
+         endif
+      enddo
+      enddo
+
+      return
+      end
+
+Then, in the other case files, you do not need any boundary conditions for the periodic
+boundaries - for instance, in the ``<case>.par`` file for this example, the boundary conditions
+set in ``boundaryTypeMap`` would only display the boundary conditions for the non-periodic
+boundaries (and similarly in the ``<case>.oudf`` file). Finally, in order to enforce periodic
+flow with a constant flow rate, specify the ``constFlowRate`` parameter in the ``<case>.par``
+file, such as
+
+.. code-block::
+
+    [GENERAL]
+      constFlowRate = meanVelocity=1.0 + direction=Z
+
 .. rubric:: Footnotes
 
 .. [#f1] There are many different ways to write :term:`OCCA` kernels. The examples shown here are by no means the most optimal form, and are only intended for illustration.
