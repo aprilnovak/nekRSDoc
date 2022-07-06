@@ -13,7 +13,7 @@ A nekRS simulation is referred to as a "case," and at a minimum requires four fi
 
 The "case name" is then the common prefix applied to these files - for instance,
 a complete input description with a case name of "eddy" would be given by the files
-``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``edd.oudf``.
+``eddy.par``, ``eddy.re2``, ``eddy.udf``, and ``eddy.oudf``.
 The only restrictions on the case name are:
 
 * It must be used as the prefix on all simulation files, and
