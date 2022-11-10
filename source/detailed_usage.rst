@@ -1147,6 +1147,48 @@ file, such as
     [GENERAL]
       constFlowRate = meanVelocity=1.0 + direction=Z
 
+Stamping Initial Conditions
+---------------------------
+
+For many periodic flows, you can save significant computing time by solving the flow equations
+on a shorter-height mesh, and then "stamping" that solution onto a full-height mesh (where you
+might then be solving for passive scalar transport). NekRS allows you to "stamp" a partial-height
+solution onto a full-height mesh using the ``gfldr`` utility. To do so, you simply need to call
+the ``gfldr`` function in a loop inside of ``userchk()``. Below, ``nd`` represents the number
+of times you want to stamp a short-height solution to obtain the full-height case and ``delta``
+represents the height of one short-height domain. So, the example below would represent
+a previous solution (``short.fld``) on a short-height domain of height 62.42, that you want to stamp five times
+onto a new mesh that has a height of 312.1.
+
+.. code-block::
+
+      subroutine userchk()
+      include 'SIZE'
+      include 'TOTAL'
+
+
+      ntot = lx1*ly1*lz1*nelv
+
+      do nd = 0,5
+
+        delta = 62.421731741003335
+
+        do i = 1,ntot
+         zm1(i,1,1,1) = zm1(i,1,1,1) - delta*nd
+        enddo
+
+        call gfldr('short.fld')
+
+        do i = 1,ntot
+         zm1(i,1,1,1) = zm1(i,1,1,1) + delta*nd
+        enddo
+
+      enddo
+
+      return
+      end
+
+
 .. rubric:: Footnotes
 
 .. [#f1] There are many different ways to write :term:`OCCA` kernels. The examples shown here are by no means the most optimal form, and are only intended for illustration.
