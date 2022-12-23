@@ -18,6 +18,9 @@ References
 .. [Launder] Launder, B.E. and Spalding, D.B. "The Numerical Computation of Turbulent Flows,"
     *Computer Methods in Applied Mechanics and Engineering* **3** 269-289 (1974)
 
+.. [Persson] Persson, P.-O. and Peraire, J. "Sub-Cell Shock Capturing for Discontinuous Galerkin Methods",
+   *44th AIAA Aerospace Sciences Meeting and Exhibit* (2006)
+
 .. [Russo] Russo, F. and Basse, N.T. "Scaling of Turbulence Intensity for Low-Speed FLow in Smooth Pipes,"
     *Flow Measurement and Instrumentation* **52** 101-114 (2016)
 
