@@ -17,6 +17,9 @@ Glossary
     API
       Application Programming Interface
 
+    AVM
+      Artificial Viscosity Method described in [Persson]_
+
     BDF
       Backward Differentiation Formula
 

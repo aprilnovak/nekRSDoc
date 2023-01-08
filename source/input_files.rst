@@ -43,7 +43,7 @@ control the simulation settings.
 The general structure of the ``.par`` file is as
 follows, where ``FOO`` and ``BAR`` are both section names, with a number of (key, value) pairs.
 
-.. code-block:: xml
+.. code-block:: ini
 
   [FOO]
     key = value
@@ -51,6 +51,7 @@ follows, where ``FOO`` and ``BAR`` are both section names, with a number of (key
 
   [BAR]
     alpha = beta
+    gamma = delta + keyword=value + ... 
 
 The valid sections for setting up a nekRS simulation are:
 
@@ -63,6 +64,7 @@ The valid sections for setting up a nekRS simulation are:
 * ``SCALARXX``: settings for the ``XX``-th scalar
 * ``TEMPERATURE``: settings for the temperature solution
 * ``VELOCITY``: settings for the velocity solution
+* ``CASEDATA``: custom settings
 
 Each of the keys and value types are now described for these sections. The
 formatting used here to describe valid key, value combinations is as follows.
@@ -85,7 +87,7 @@ to ``options``. In other words, if you wanted to grab the value set by the user 
 ``backend`` key, and save it in a local variable named ``user_occa_backend``,
 you can use the ``getArgs`` function on the ``options`` data structure as follows.
 
-.. code-block::
+.. code-block:: cpp
 
   std::string user_occa_backend;
   options.getArgs("THREAD MODEL", user_occa_backend);
@@ -97,13 +99,15 @@ Generally, most ``.par`` settings are not saved to a data structure, so througho
 base, whenever information from the ``.par`` file is needed, it is simply
 extracted on-the-fly via the ``options`` structure.
 
+nekRS performs validation of the par file. Invalid sections, invalid keys or values,
+invalid value combinations, missing values etc. will terminate the NekRS run with a
+clear error message. Deprecated attributes will be highlighed. 
+
 .. warning::
 
-  nekRS currently does not have any checking on valid
-  input parameters in the ``.par`` file (though this will be added in the future) - please
-  be sure that you type these (key, value) pairs correctly. nekRS also does not have a
-  method to register all valid keys, so this user guide may quickly become out of date
-  unless developers are careful to keep the keys listed here up to date.
+  This user guide may quickly become out of date unless developers are careful to keep 
+  the keys listed here up to date. A list of possible values is also given in 
+  ``src/io/parHelp.txt``
 
 nekRS uses just-in-time compilation to allow the incorporation of user-defined functions
 into program execution. These functions can be written to allow ultimate flexibility on
@@ -124,17 +128,17 @@ of nekRS.
 
 This section is used to describe settings for the (optional) :term:`AMG` solver.
 
-**coarsenType** [``BOOMERAMG COARSEN TYPE``]
+ * **coarsenType** [``BOOMERAMG COARSEN TYPE``]
 
-**interpolationType** [``BOOMERAMG INTERPOLATION TYPE``]
+ * **interpolationType** [``BOOMERAMG INTERPOLATION TYPE``]
 
-**iterations** *<int>* [``BOOMERAMG ITERATIONS``]
+ * **iterations** *<int>* [``BOOMERAMG ITERATIONS``]
 
-**nonGalerkinTol** [``BOOMERAMG NONGALERKIN TOLERANCE``]
+ * **nonGalerkinTol** [``BOOMERAMG NONGALERKIN TOLERANCE``]
 
-**smootherType** [``BOOMERAMG SMOOTHER TYPE``]
+ * **smootherType** [``BOOMERAMG SMOOTHER TYPE``]
 
-**strongThreshold** *<double>* [``BOOMERAMG NONGALERKIN TOLERANCE``]
+ * **strongThreshold** *<double>* [``BOOMERAMG NONGALERKIN TOLERANCE``]
 
 ``GENERAL`` section
 ^^^^^^^^^^^^^^^^^^^
@@ -142,135 +146,226 @@ This section is used to describe settings for the (optional) :term:`AMG` solver.
 This section is used to describe generic settings for the simulation such as time steppers,
 solution order, and file writing control.
 
-**cubaturePolynomialOrder** *<int>* [``CUBATURE POLYNOMIAL DEGREE``]
+* **constFlowRate** *<string>* [``"CONSTANT FLOW RATE = [value is provided]``]
+ 
+  Set a constant flow rate in a given direction. Either ``meanVelocity`` or 
+  ``meanVolumetricFlow`` must be provided to set the flow rate,
+  and either ``bid`` or ``direction`` must be provided to set the direction.
+  The following options are valid:
 
-Polynomial order for the cubature. If not specified, this defaults to the integer
-closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
-order.
+  * **meanVelocity** *<float>* [``CONSTANT FLOW RATE TYPE = BULK``, ``FLOW RATE``]
 
-.. TODO: need better description of what cubature is
+    Sets the mean velocity.
+  
+  * **meanVelocity** *<float>* [``CONSTANT FLOW RATE TYPE = VOLUMETRIC``, ``FLOW RATE``]
 
-**dealiasing** *(true), false*
+    Sets the mean volumetric flow rate.
+  
+  * **bid** *<int>, <int>* [``CONSTANT FLOW FROM BID``, ``CONSTANT FLOW TO BID``]
 
-If dealiasing is turned on, [``ADVECTION TYPE``] is set to ``CUBATURE+CONVECTIVE``,
-whereas if dealiasing is turned off, [``ADVECTION TYPE``] is set to ``CUBATURE``.
+    Sets the flow direction based on two boundary IDs.
+  
+  * **direction** *x, y, z*  [``CONSTANT FLOW DIRECTION``]
 
-.. TODO: need better description of what dealiasing is
+    Sets a flow direction parallel to the global coordinate axis.
 
-**dt** *<double>* [``DT``]
+* **cubaturePolynomialOrder** *<int>* [``CUBATURE POLYNOMIAL DEGREE``]
 
-Time step size
+  Polynomial order for the cubature. If not specified, this defaults to the integer
+  closest to :math:`\frac{3}{2}(N + 1)` minus one, where :math:`N` is the polynomial
+  order.
 
-**elapsedTime** *<double>* [``STOP AT ELAPSED TIME``]
+  .. TODO: need better description of what cubature is
 
-Elapsed time at which to end the simulation, if using ``stopAt = elapsedTime``.
+* **dealiasing** *(true), false*
 
-**endTime** *<double>* [``END TIME``]
+  If dealiasing is turned on, [``ADVECTION TYPE``] is set to ``CUBATURE+CONVECTIVE``,
+  whereas if dealiasing is turned off, [``ADVECTION TYPE``] is set to ``CUBATURE``.
 
-Final time at which to end the simulation, if using ``stopAt = endTime``.
+  .. TODO: need better description of what dealiasing is
+* **dt** *<string>* [``DT``]
 
-**extrapolation** *subCycling*
+  Time step size. If any of the keyword options ``targetCFL``, ``max`` or ``initial``
+  are specified (separated by ``+``), a variable timestep [``VARIABLE DT = TRUE``] 
+  is used. Otherwise, ``dt`` is parsed as ``float`` and indicates the time step size.
+  
+  The following keywords may be given:
 
-.. TODO: need better description of what extrapolation is
+  * **targetCFL** *(0.5), <float>* [``TARGET CFL``]: The target :term:`CFL` is also 
+    used to set a default for the ``subCyclingSteps``. If not specified, it is given 
+    by `max(subcyclingSteps*2, 0.5)``. 
+  
+  * **max** *(0), <float>* [``MAX DT``]: Largest allowed timestep. If 0 or unset, the 
+    option is ignored.
 
-**filterCutoffRatio** *<double>*
+  * **initial** *(0), <float>* [initially written to ``DT``]: initial timestep.
 
-.. TODO: need better description of what filter cutoff ratio is
+* **elapsedTime** *<double>* [``STOP AT ELAPSED TIME``]
 
-**filtering** *hpfrt*
+  Elapsed time at which to end the simulation, if using ``stopAt = elapsedTime``.
 
-If ``filtering = hpfrt``, [``FILTER STABILIZATION``] is set to ``RELAXATION``,
-and ``filterWeight`` must be specified. If ``filtering`` is not specified,
-[``FILTER STABILIZATION``] is set to ``NONE`` by default.
+* **endTime** *<double>* [``END TIME``]
 
-.. TODO: need better description of what filtering is
+  Final time at which to end the simulation, if using ``stopAt = endTime``.
 
-**filterModes** *<int>* [``HPFRT MODES``]
+* **numSteps** *(0), <int>* [``NUMBER TIMESTEPS``]
 
-Number of filter modes; minimum value is 1. If not specified, the number of modes
-is set by default to the nearest integer to :math:`(N+1)(1-f_c)`, where :math:`f_c`
-is the filter cutoff ratio.
+  Number of time steps to perform, if using ``stopAt = numSteps``. By default, if not
+  specified, then it is assumed that no time steps are performed.
 
-.. TODO: need better description of what filter modes is
 
-**filterWeight** *<double>* [``HPFRT STRENGTH``]
+* **oudf** *[casename].oudf* [``UDF OKL FILE``]
 
-.. TODO: need better description of what filter weight is
+  File name (including extension) of the ``*.oudf`` file, relative to the current directory.
+  By default, the stem of the ``*.par`` file is used as ``casename``.
 
-**numSteps** *(0), <int>* [``NUMBER TIMESTEPS``]
+* **polynomialOrder** *<int>* [``POLYNOMIAL DEGREE``]
 
-Number of time steps to perform, if using ``stopAt = numSteps``. By default, if not
-specified, then it is assumed that no time steps are performed.
+  Polynomial order for the spectral element solution. An order of :math:`N` will result
+  in :math:`N+1` basis functions for each spatial dimension. The polynomial order is
+  currently limited to :math:`N < 10`.
 
-**polynomialOrder** *<int>* [``POLYNOMIAL DEGREE``]
+* **startFrom** *<string>* [``RESTART FILE NAME``]
 
-Polynomial order for the spectral element solution. An order of :math:`N` will result
-in :math:`N+1` basis functions for each spatial dimension. The polynomial order is
-currently limited to :math:`N < 10`.
+  Absolute or relative path to a nekRS output file from which to start the simulation from.
+  When used, the [``RESTART FROM FILE``] option argument is also set to true.
+  If the solution in the restart file was obtained with a different polynomial order,
+  interpolation is performed to the current simulation settings. To only read select fields
+  from the restart file (such as if you wanted to only apply the temperature solution from the
+  restart file to the present simulation), append ``+U`` (to read velocity), ``+P`` (to read pressure),
+  or ``+T`` (to read temperature) to the end of the restart file name. For instance, if the restart
+  file is named ``restart.fld``, using ``restart.fld+T`` will only read the temperature solution.
+  If ``startFrom`` is omitted, the simulation is assumed to start based on the user-defined initial conditions at time zero.
 
-**startFrom** *<string>* [``RESTART FILE NAME``]
+* **stopAt** *(numSteps), elapsedTime, endTime*
 
-Absolute or relative path to a nekRS output file from which to start the simulation from.
-When used, the [``RESTART FROM FILE``] option argument is also set to true.
-If the solution in the restart file was obtained with a different polynomial order,
-interpolation is performed to the current simulation settings. To only read select fields
-from the restart file (such as if you wanted to only apply the temperature solution from the
-restart file to the present simulation), append ``+U`` (to read velocity), ``+P`` (to read pressure),
-or ``+T`` (to read temperature) to the end of the restart file name. For instance, if the restart
-file is named ``restart.fld``, using ``restart.fld+T`` will only read the temperature solution.
-If ``startFrom`` is omitted, the simulation is assumed to start based on the user-defined initial conditions at time zero.
+  When to stop the simulation, either based on a number of time steps *numSteps*, a simulated
+  end time *endTime*, or a total elapsed wall time *elapsedTime*. If ``stopAt = numSteps``,
+  the ``numSteps`` parameter must be provided. If ``stopAt = endTime``, the ``endTime``
+  parameter must be provided. If ``stopAt = elapsedTime``, the ``elapsedTime`` parameter
+  must be provided.
 
-**stopAt** *(numSteps), elapsedTime, endTime*
+* **subCyclingSteps** *(0), <int>, auto* [``SUBCYCLING STEPS``]
 
-When to stop the simulation, either based on a number of time steps *numSteps*, a simulated
-end time *endTime*, or a total elapsed wall time *elapsedTime*. If ``stopAt = numSteps``,
-the ``numSteps`` parameter must be provided. If ``stopAt = endTime``, the ``endTime``
-parameter must be provided. If ``stopAt = elapsedTime``, the ``elapsedTime`` parameter
-must be provided.
+  Number of subcycling steps; if ``dt: targetCFL`` is specified, the number of subcycling 
+  steps is taken as the integer nearest to half the target :term:`CFL` as given by
+  the ``dt: targetCFL`` parameter. In this case, ``auto`` ensures that an error is raised
+  if ``dt: targetCFL`` is not specified.
 
-**subCyclingSteps** *(0), <int>* [``SUBCYCLING STEPS``]
+  .. TODO: better description of what subcycling is
 
-Number of subcycling steps; if ``extrapolation`` is not specified, then by default
-the number of subcycling steps is zero. Otherwise, if ``extrapolation`` is specified,
-there are two possible defaults (both of which would be overridden by setting
-``subCyclingSteps`` directly) - if ``targetCFL`` is not specified, the default number of subcycling
-steps is set to 1; otherwise, the default number of subcycling steps is taken as
-the integer nearest to half the target :term:`CFL` as given by
-the ``targetCFL`` parameter.
+* **timeStepper** *(tombo2), bdf1, bdf2, bdf3, tombo1, tombo3* [``TIME INTEGRATOR``]
 
-.. TODO: better description of what subcycling is
+  The method to use for time stepping. Note that
+  if you select any of the :term:`BDF` options, the time integrator is internally set to
+  the :term:`TOMBO` time integrator of equivalent order.
 
-**targetCFL** *<double>*
+* **udf** *[casename].udf* [``UDF FILE``]
 
-The target :term:`CFL` number when using adaptive time stepping with ``variableDT = true``
-(not currently enabled). When using extrapolation, the target :term:`CFL` is also used to
-set a default for the ``subCyclingSteps``; so while this parameter does not currently set
-a target :term:`CFL` by adaptively changing the time step, it is used in some cases to set
-the default number of subcycling steps.
+  File name (including extension) of the ``*.udf`` file, relative to the current directory.
+  By default, the stem of the ``*.par`` file is used as ``casename``.
 
-**timeStepper** *(tombo2), bdf1, bdf2, bdf3, tombo1, tombo3* [``TIME INTEGRATOR``]
+* **usr** *[casename].usr* [``NEK USR FILE``]
 
-The method to use for time stepping. Note that
-if you select any of the :term:`BDF` options, the time integrator is internally set to
-the :term:`TOMBO` time integrator of equivalent order.
+  File name (including extension) of the ``*.usr`` file, relative to the current directory.
+  By default, the stem of the ``*.par`` file is used as ``casename``.
 
-**verbose** *(false), true* [``VERBOSE``]
+* **verbose** *(false), true* [``VERBOSE``]
 
-Whether to print the simulation results in verbose format to the screen.
+  Whether to print the simulation results in verbose format to the screen.
 
-**writeControl** *(timeStep), runTime* [``SOLUTION OUTPUT COTROL``]
+* **writeControl** *(timeStep), runTime* [``SOLUTION OUTPUT COTROL``]
 
-Method to use for the writing of output files, either based on a time step interval with
-*timeStep* (in which case ``SOLUTION OUTPUT CONTROL`` is set to ``STEPS``)
-or a simulated time interval with *runTime* (in which case ``SOLUTION OUTPUT CONTROL``
-is set to ``RUNTIME``).
+  Method to use for the writing of output files, either based on a time step interval with
+  *timeStep* (in which case ``SOLUTION OUTPUT CONTROL`` is set to ``STEPS``)
+  or a simulated time interval with *runTime* (in which case ``SOLUTION OUTPUT CONTROL``
+  is set to ``RUNTIME``).
 
-**writeInterval** *<double>* [``SOLUTION OUTPUT INTERVAL``]
+* **writeInterval** *<double>* [``SOLUTION OUTPUT INTERVAL``]
 
-Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
-in units of simulation time for ``writeControl = runTime``. If a runtime step control is
-used that does not perfectly align with the time steps of the simulation, nekRS will write
-an output file on the timestep that most closely matches the desired write interval.
+  Output writing frequency, either in units of time steps for ``writeControl = timeStep`` or
+  in units of simulation time for ``writeControl = runTime``. If a runtime step control is
+  used that does not perfectly align with the time steps of the simulation, nekRS will write
+  an output file on the timestep that most closely matches the desired write interval.
+
+Common keys
+^^^^^^^^^^^
+
+These parameters may be specified in any of the ``GENERAL``, ``VELOCITY``, ``TEMPERATURE`` and 
+``SCALARXX``  sections. If the parameter is not specified in any given ``VELOCITY``, 
+``TEMPERATURE`` or ``SCALARXX`` section, its values are usually inherited from the ``GENERAL``
+section.
+
+The key for the ``options`` structure listed here is the ``GENERAL`` key; in the other sections, 
+the key is prefixed with the section name.
+
+* **regularization** *("none"), <string>* [``REGULARIZATION METHOD``]
+  
+  Filtering settings., options are separated by ``+``. This parameter is mutually exclusive
+  with the (deprecated) ``filtering`` parameter. The parameter may be specified in any of
+  the ``GENERAL``, ``VELOCITY``, ``TEMPERATURE`` and ``SCALARXX``  sections. If the parameter
+  is no specified in any given ``VELOCITY``, ``TEMPERATURE`` or ``SCALARXX`` section,
+  its values are inherited from the ``GENERAL`` section.
+
+  Filtering is analogous to Nek5000; the ``hpfrt`` filter is described  further in the 
+  `Nek5000 documentation <http://nek5000.github.io/NekDoc/problem_setup/filter.html#high-pass-filter>`__.
+
+  The following examples for ``regularization`` are given in ``examples``:
+
+  .. code-block:: ini
+
+    # examples/turbPipePeriodic
+    regularization = hpfrt + nModes=1 + scalingCoeff=10
+
+    # examples/double_shear
+    regularization=avm+c0+highestModalDecay+scalingCoeff=0.5+rampconstant=1
+
+  * ``none``: regularization is disabled.
+  
+  * ``hpfrt``: High-pass filter. The following settings apply to this mode:
+
+    * ``nmodes`` *(1), <int>* [``HPFRT MODES``] 
+      
+      Number of filtered modes :math:`(N-N')`, where :math:`(N)` is the
+      polynomial degree and :math:`(N')` the number of fully resolved modes.
+
+    * ``cutoffratio`` *<float>* 
+      
+      Alternatively, the number of filtered modes can be given 
+      by the cutoff ratio, where :math:`\frac{N'+1}{N+1} = {\tt filterCutoffRatio}`.
+
+    * ``scalingcoeff`` *(1.0), <expression>* (required): [``HPFRT STRENGTH``]
+      
+      filter weight
+  
+       .. TODO: need better description of what filter weight is
+      
+  * ``avm+hpfResidual``: use HPF Residual :term:`AVM<AVM>`, or ``avm+highestModalDecay``: 
+    use Persson's highest modal decay AVM.
+    The AVM is described in [Persson]_, and only allowed for scalars. 
+    If specified in ``GENERAL``, the ``regularization`` parameter must be overwritten in the 
+    ``VELOCITY`` section. The following settings apply to these modes:
+
+    * ``scalingcoeff`` *(1.0), <expression>* (required) [``REGULARIZATION SCALING COEFF``]
+      
+      filter weight
+  
+    * the ``nmodes``, ``cutoffratio`` and ``scalingcoeff`` parameters described above. With 
+      ``HighestModalDecay`` mode, ``scalingcoeff`` is interpreted (and overwrites) as 
+      ``vismaxcoeff``.
+
+    * ``vismaxcoeff`` *(0.5), <float>* [``REGULARIZATION VISMAX COEFF``]: 
+      
+      controls maximum artificial viscosity
+  
+    * ``c0`` [``REGULARIZATION AVM C0``]:
+    
+      if provided, make viscosity C0 continous across elements
+  
+    * ``rampconstant`` *(1.0), <float>* [``REGULARIZATION RAMP CONSTANT``]: 
+      
+      controls ramp to maximum artificial viscosity
+
 
 ``MESH`` section
 ^^^^^^^^^^^^^^^^
@@ -476,6 +571,58 @@ Constant dynamic viscosity; if a negative value is provided, the dynamic viscosi
 internally set to :math:`1/|\mu|`, where :math:`\mu` is the value of the ``viscosity`` key.
 If not specified, this defaults to :math:`1.0`.
 
+``CASEDATA`` section
+^^^^^^^^^^^^^^^^^^^^^
+
+This section may be used to provide custom parameters in the ``.par`` file that are to be read
+in the ``.udf`` file. For example, you may specify 
+
+.. code-block:: ini
+
+  [CASEDATA]
+    Re_tau = 550
+
+in the ``.par`` file; the parameters should be read in the :ref:`UDF_Setup0 <udf_setup0>` 
+function, e.g.
+
+.. code-block:: cpp
+
+  static dfloat Re_tau;
+  platform->par->extract("casedata", "re_tau",Re_tau);
+
+NekRS does not check the contents of the ``CASEDATA`` section; such checks may be added in the
+``UDF_Setup0`` function as well.
+
+Deprecated parameters
+^^^^^^^^^^^^^^^^^^^^^
+
+``GENERAL`` section
+"""""""""""""""""""
+
+* **filterCutoffRatio** *<double>* [deprecated, see **regularization**]
+
+  .. TODO: need better description of what filter cutoff ratio is
+
+* **filtering** *hpfrt* [deprecated, see **regularization**]
+
+  If ``filtering = hpfrt``, [``FILTER STABILIZATION``] is set to ``RELAXATION``,
+  and ``filterWeight`` must be specified. If ``filtering`` is not specified,
+  [``FILTER STABILIZATION``] is set to ``NONE`` by default.
+
+  .. TODO: need better description of what filtering is
+
+*  **filterModes** *<int>* [``HPFRT MODES``] [deprecated, see **regularization**]
+
+  Number of filter modes; minimum value is 1. If not specified, the number of modes
+  is set by default to the nearest integer to :math:`(N+1)(1-f_c)`, where :math:`f_c`
+  is the filter cutoff ratio.
+
+  .. TODO: need better description of what filter modes is
+
+*  **filterWeight** *<double>* [``HPFRT STRENGTH``] [deprecated, see **regularization**]
+
+  .. TODO: need better description of what filter weight is
+
 Legacy Option (.rea)
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -655,6 +802,8 @@ addition to loading kernels, this function can also be used to propagate user-de
 variables to the kernels. See
 the :ref:`Defining Variables to Access in Device Kernels <defining_variables_for_device>`
 section for a description of this feature.
+
+.. _udf_setup0:
 
 ``UDF_Setup0(MPI_Comm comm, setupAide & options)``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
