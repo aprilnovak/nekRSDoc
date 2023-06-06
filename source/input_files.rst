@@ -79,9 +79,9 @@ the :term:`CUDA` backend is used. Similar conventions are used to describe non-c
 type values; for instance, *(3), <int>* indicates that the default value for the indicated
 key is 3, but any integer value can be provided.
 
-Most of the values associated with the various keys in the ``.par`` file are read by nekRS
+Mose of the values associated with the various keys in the ``.par`` file are read by nekRS
 and then saved to various arguments in the ``options`` data structure. The argument
-is indicated in this section within square brackets. For example,
+is indicated in this section within square brrackets. For example,
 the value set by the ``backend`` key is stored in the ``THREAD MODEL`` argument
 to ``options``. In other words, if you wanted to grab the value set by the user for the
 ``backend`` key, and save it in a local variable named ``user_occa_backend``,
@@ -101,7 +101,7 @@ extracted on-the-fly via the ``options`` structure.
 
 nekRS performs validation of the par file. Invalid sections, invalid keys or values,
 invalid value combinations, missing values etc. will terminate the NekRS run with a
-clear error message. Deprecated attributes will be highlighted. 
+clear error message. Deprecated attributes will be highlighed. 
 
 .. warning::
 
@@ -469,7 +469,7 @@ by sideset ID. The valid characters/strings are shown in Table
 
 **diffusivity** *<double>*
 
-Although this is named ``diffusivity``, this parameter doubly represents the conductivity
+Although this is named ``diffusivity``, this parameter doublely represents the conductivity
 governing diffusion of the passive scalar. In other words, the analogue from the
 ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
 ``conductivity`` parameter. If a negative value is provided, the
@@ -488,7 +488,7 @@ Absolute residual tolerance for the passive scalar solution
 
 **rho** *<double>*
 
-Although this is name ``rho``, this parameter doubly represents the coefficient on the
+Although this is name ``rho``, this parameter doublely represents the coefficient on the
 total derivative of the passive scalar. In other words, the analogue from the
 ``TEMPERATURE`` section (a passive scalar in its internal representation) is the
 ``rhoCp`` parameter. If not specified, this defaults to :math:`1.0`.
@@ -632,7 +632,7 @@ See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
 `documentation <http://nek5000.github.io/NekDoc/problem_setup/case_files.html>`__ [#f1]_
 for further details on the format for the ``.rea`` file.
 
-The ``.rea`` file contains both simulation parameters (now covered by the ``.par`` file) as well
+The ``.rea`` file contains both simulation parameters (now coveredby the ``.par`` file) as well
 as mesh information (now covered by the ``.re2`` file). This section
 here only describes the legacy approach to setting simulation parameters via the ``.rea`` file.
 
@@ -724,7 +724,7 @@ See the ``Mesh File (.re2)`` section of the :term:`Nek5000`
 `documentation <http://nek5000.github.io/NekDoc/problem_setup/case_files.html>`__ [#f1]_
 for further details on the format for the ``.rea`` file.
 
-The ``.rea`` file contains both simulation parameters (now covered by the ``.par`` file) as well as
+The ``.rea`` file contains both simulation parameters (now coveredby the ``.par`` file) as well as
 mesh information (now covered by the ``.re2`` file). This section
 here only describes the legacy approach to setting mesh information via the ``.rea`` file.
 
@@ -773,7 +773,7 @@ and only involves:
 * Loading those kernels in ``UDF_LoadKernels``
 * Defining those kernels in the device user file (the ``.oudf`` file)
 
-The only kernels in the ``.oudf`` file that don't need to be explicitly loaded are
+The only kernels in the ``.oudf`` file that don't need to be exlicitly loaded are
 the boundary condition kernels that ship with nekRS. During the ``.oudf`` just-in-time
 compilation, nekRS will search the ``.oudf`` file for any functions that match the
 nekRS boundary condition functions, and automatically create and load a kernel based
