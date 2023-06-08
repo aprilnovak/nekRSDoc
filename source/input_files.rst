@@ -107,7 +107,7 @@ clear error message. Deprecated attributes will be highlighted.
 
   This user guide may quickly become out of date unless developers are careful to keep 
   the keys listed here up to date. A list of possible values is also given in 
-  ``src/io/parHelp.txt``
+  ``doc/parHelp.txt``
 
 nekRS uses just-in-time compilation to allow the incorporation of user-defined functions
 into program execution. These functions can be written to allow ultimate flexibility on
