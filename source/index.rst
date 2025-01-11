@@ -31,6 +31,7 @@ Table of Contents
 .. toctree::
    :maxdepth: 2
 
+   requirements
    theory
    input_files
    commonly_used_variables
